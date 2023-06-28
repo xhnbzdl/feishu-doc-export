@@ -44,15 +44,8 @@ namespace feishu_doc_export
         /// <param name="services"></param>
         public static IServiceCollection ConfigService(this IServiceCollection services)
         {
-            services.AddHttpApi<IFeiShuHttpApi>();
-
-            services.AddClientCredentialsTokenProvider<IFeiShuHttpApi>(o =>
-            {
-                o.Endpoint = new Uri("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal");
-                o.Credentials.Client_id = "cli_a4ffeeda46bc9013";
-                o.Credentials.Client_secret = "VWqsXnY83R1p6psboMRu0evFRRnEc5kD";
-            });
-            
+            services.AddHttpApi<IFeiShuHttpApi>();            
+            services.AddTokenProvider<IFeiShuHttpApi,FeiShuTokenProvider>();
 
             return services;
         }

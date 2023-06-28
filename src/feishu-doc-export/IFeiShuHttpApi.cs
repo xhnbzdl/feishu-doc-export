@@ -9,7 +9,7 @@ using WebApiClientCore.Attributes;
 
 namespace feishu_doc_export
 {
-    //[HttpHost(FeiShuConsts.OpenApiEndPoint)]
+    [HttpHost(FeiShuConsts.OpenApiEndPoint)]
     public interface IFeiShuHttpApi: IHttpApi
     {
         /// <summary>
@@ -25,6 +25,8 @@ namespace feishu_doc_export
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [OAuthToken]
+        //[JsonReturn]
         Task<ResponseData<WikiNodePagedResult>> GetWikeNodeList([Uri] string url);
     }
 }
