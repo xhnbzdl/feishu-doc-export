@@ -2,6 +2,7 @@
 using feishu_doc_export.Dtos;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text;
+using System.Text.RegularExpressions;
 using WebApiClientCore;
 using WebApiClientCore.Exceptions;
 
@@ -28,17 +29,37 @@ namespace feishu_doc_export
 
             Console.WriteLine("正在加载知识库的所有文档信息，请耐心等待...");
 
+            // 获取知识库下的所有文档
             var wikiNodes = await GetAllWikiNode(GlobalConfig.WikiSpaceId);
             //var wikiNodes = GetWikiChildNode(GlobalConfig.WikiSpaceId, "wikcnATdEp3Y6UyjAtv4KPjGrcg").Result;
 
+            // 不支持导出的文件
+            List<string> noSupportExportFiles = new List<string>();
+
+            int count = 1;
             foreach (var item in wikiNodes)
             {
 
-                var fileExt = GlobalConfig.GetFileExtension(item.ObjType);
+                var isSupport = GlobalConfig.GetFileExtension(item.ObjType, out string fileExt);
+                // 如果该文件类型不支持导出
+                if (!isSupport)
+                {
+                    noSupportExportFiles.Add(item.Title);
+                    Console.WriteLine($"文档【{item.Title}】不支持导出，已忽略。如有需要请手动下载");
+                    continue;
+                }
 
-                Console.WriteLine($"正在导出文档————————【{item.Title}.{fileExt}】");
+                Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}.{fileExt}】");
 
                 await DownLoadDocument(fileExt, item.ObjToken, item.ObjType);
+            }
+
+            Console.WriteLine("文档已全部导出" + (noSupportExportFiles.Any() ? "以下是所有不支持导出的文档" : ""));
+
+            // 输出不支持导入的文档
+            for (int i = 1; i <= noSupportExportFiles.Count; i++)
+            {
+                Console.WriteLine($"{i}.【{noSupportExportFiles[i]}】");
             }
         }
 
@@ -213,9 +234,11 @@ namespace feishu_doc_export
             {
                 var bytes = await DownLoad(taskInfo.FileToken);
 
-                var saveFileName = taskInfo.FileName + "." + fileExtension;
+                var savefileName = taskInfo.FileName + "." + fileExtension;
+                // 替换文件名中的非法字符
+                savefileName = Regex.Replace(savefileName, @"[\\/:\*\?""<>\|]", "-");
 
-                var filePath = Path.Combine(GlobalConfig.ExportPath, saveFileName);
+                var filePath = Path.Combine(GlobalConfig.ExportPath, savefileName);
 
                 File.WriteAllBytes(filePath, bytes);
             }

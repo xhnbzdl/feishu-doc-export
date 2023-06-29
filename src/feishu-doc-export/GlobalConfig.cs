@@ -16,6 +16,9 @@ namespace feishu_doc_export
 
         public static string WikiSpaceId { get; set; }
 
+        /// <summary>
+        /// 飞书支持导出的文件类型和导出格式
+        /// </summary>
         static Dictionary<string, string> fileExtensionDict = new Dictionary<string, string>()
         {
             {"doc","docx" },
@@ -24,9 +27,15 @@ namespace feishu_doc_export
             {"bitable","xlsx" },
         };
 
-        public static string GetFileExtension(string key)
-        {
-            return fileExtensionDict[key];
+        /// <summary>
+        /// 获取飞书支持导出的文件格式
+        /// </summary>
+        /// <param name="objType"></param>
+        /// <param name="fileExt"></param>
+        /// <returns></returns>
+        public static bool GetFileExtension(string objType, out string fileExt)
+        {  
+            return fileExtensionDict.TryGetValue(objType, out fileExt);
         }
     }
 }
