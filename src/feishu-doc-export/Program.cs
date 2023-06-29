@@ -49,6 +49,15 @@ namespace feishu_doc_export
                     continue;
                 }
 
+                // 文件名超出长度限制，不支持导出
+                if (item.Title.Length > 64)
+                {
+                    var left64FileName = item.Title.PadLeft(64) + "...";
+                    noSupportExportFiles.Add($"(文件名超长){left64FileName}");
+                    Console.WriteLine($"文档【{left64FileName}】的文件命名长度超出Windows文件命名的长度限制，已忽略");
+                    continue;
+                }
+
                 Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}.{fileExt}】");
 
                 await DownLoadDocument(fileExt, item.ObjToken, item.ObjType);
@@ -57,9 +66,9 @@ namespace feishu_doc_export
             Console.WriteLine("文档已全部导出" + (noSupportExportFiles.Any() ? "以下是所有不支持导出的文档" : ""));
 
             // 输出不支持导入的文档
-            for (int i = 1; i <= noSupportExportFiles.Count; i++)
+            for (int i = 0; i < noSupportExportFiles.Count; i++)
             {
-                Console.WriteLine($"{i}.【{noSupportExportFiles[i]}】");
+                Console.WriteLine($"{i + 1}.【{noSupportExportFiles[i]}】");
             }
         }
 
