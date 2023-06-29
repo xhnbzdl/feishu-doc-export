@@ -3,6 +3,7 @@ using feishu_doc_export.Dtos;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using WebApiClientCore;
+using WebApiClientCore.Exceptions;
 
 namespace feishu_doc_export
 {
@@ -10,17 +11,38 @@ namespace feishu_doc_export
     {
         static IFeiShuHttpApi feiShuHttpApi;
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
+            Console.WriteLine("请输入飞书自建应用的AppId");
+            GlobalConfig.AppId = Console.ReadLine();
+            Console.WriteLine("请输入飞书自建应用的AppSecret");
+            GlobalConfig.AppSecret = Console.ReadLine();
+            Console.WriteLine("请输入要导出的知识库Id");
+            GlobalConfig.WikiSpaceId = Console.ReadLine();
+            Console.WriteLine("请输入文档导出的目录位置");
+            GlobalConfig.ExportPath = Console.ReadLine();
+
             IOC.Init();
 
             feiShuHttpApi = IOC.IoContainer.GetService<IFeiShuHttpApi>();
 
-            var wikiNodes = GetAllWikiNode("7086342166150250500").Result;
+            Console.WriteLine("正在加载知识库的所有文档信息，请耐心等待...");
 
-            Console.WriteLine(wikiNodes.Count);
+            var wikiNodes = await GetAllWikiNode(GlobalConfig.WikiSpaceId);
+            //var wikiNodes = GetWikiChildNode(GlobalConfig.WikiSpaceId, "wikcnATdEp3Y6UyjAtv4KPjGrcg").Result;
 
+            foreach (var item in wikiNodes)
+            {
+
+                var fileExt = GlobalConfig.GetFileExtension(item.ObjType);
+
+                Console.WriteLine($"正在导出文档————————【{item.Title}.{fileExt}】");
+
+                await DownLoadDocument(fileExt, item.ObjToken, item.ObjType);
+            }
         }
+
+        #region 获取所有的文档节点
 
         /// <summary>
         /// 获取空间子节点列表
@@ -112,5 +134,92 @@ namespace feishu_doc_export
 
             return childNodes;
         }
+        #endregion
+
+        #region 导出文档
+        /// <summary>
+        /// 创建导出任务
+        /// </summary>
+        /// <param name="fileExtension">导出文件扩展名</param>
+        /// <param name="token">文档token</param>
+        /// <param name="type">导出文档类型</param>
+        /// <returns></returns>
+        static async Task<ExportOutputDto> CreateExportTask(string fileExtension, string token, string type)
+        {
+            var request = RequestData.CreateExportTask(fileExtension, token, type);
+
+            try
+            {
+                var result = await feiShuHttpApi.CreateExportTask(request);
+                return result.Data;
+            }
+            catch (HttpRequestException ex) when (ex.InnerException is ApiResponseStatusException statusException)
+            {
+                // 响应状态码异常
+                var response = statusException.ResponseMessage;
+
+                // 响应的数据
+                var responseData = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine(responseData);
+            }
+
+            return null;
+        }
+
+        static async Task<ExportTaskResultDto> QueryExportTaskResult(string ticket, string token)
+        {
+            int status;
+
+            var data = new ExportTaskResultDto();
+            do
+            {
+                var result = await feiShuHttpApi.QueryExportTask(ticket, token);
+
+                status = result.Data.Result.JobStatus;
+
+                switch (status)
+                {
+                    case 0:
+                        data = result.Data;
+                        break;
+                    case 2:
+                        await Task.Delay(300);
+                        break;
+                    default:
+                        throw new Exception($"Error: {result.Data.Result.JobErrorMsg}，ErrorCode:{status}");
+                }
+
+            } while (status != 0);
+
+            return data;
+        }
+
+        static async Task<byte[]> DownLoad(string fileToken)
+        {
+            var result = await feiShuHttpApi.DownLoad(fileToken);
+
+            return result;
+        }
+
+        static async Task DownLoadDocument(string fileExtension, string token, string type)
+        {
+            var exportTaskDto = await CreateExportTask(fileExtension, token, type);
+
+            var exportTaskResult = await QueryExportTaskResult(exportTaskDto.Ticket, token);
+            var taskInfo = exportTaskResult.Result;
+
+            if (taskInfo.JobErrorMsg == "success")
+            {
+                var bytes = await DownLoad(taskInfo.FileToken);
+
+                var saveFileName = taskInfo.FileName + "." + fileExtension;
+
+                var filePath = Path.Combine(GlobalConfig.ExportPath, saveFileName);
+
+                File.WriteAllBytes(filePath, bytes);
+            }
+        }
+        #endregion
     }
 }

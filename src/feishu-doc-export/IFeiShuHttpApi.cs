@@ -1,6 +1,7 @@
 ﻿using feishu_doc_export.Dtos;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ namespace feishu_doc_export
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        [HttpPost("open-apis/auth/v3/tenant_access_token/internal")]
+        [HttpPost("/open-apis/auth/v3/tenant_access_token/internal")]
         Task<Dictionary<string,object>> GetTenantAccessToken(object request);
 
         /// <summary>
@@ -26,7 +27,37 @@ namespace feishu_doc_export
         /// <returns></returns>
         [HttpGet]
         [OAuthToken]
-        //[JsonReturn]
+        [JsonReturn]
         Task<ResponseData<WikiNodePagedResult>> GetWikeNodeList([Uri] string url);
+
+        /// <summary>
+        /// 创建文档导出任务结果
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost("/open-apis/drive/v1/export_tasks")]
+        [OAuthToken]
+        [JsonReturn]
+        Task<ResponseData<ExportOutputDto>> CreateExportTask([JsonContent] object request);
+
+        /// <summary>
+        /// 查询导出任务
+        /// </summary>
+        /// <param name="ticket"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        [HttpGet("/open-apis/drive/v1/export_tasks/{ticket}?token={token}")]
+        [OAuthToken]
+        [JsonReturn]
+        Task<ResponseData<ExportTaskResultDto>> QueryExportTask(string ticket, string token);
+
+        /// <summary>
+        /// 下载导出文件
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        [HttpGet("/open-apis/drive/v1/export_tasks/file/{fileToken}/download")]
+        [OAuthToken]
+        Task<byte[]> DownLoad(string fileToken);
     }
 }
