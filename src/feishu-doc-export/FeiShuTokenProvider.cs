@@ -27,7 +27,7 @@ namespace feishu_doc_export
         {
             var tokenResult = new TokenResult();
 
-            var requestData = RequestData.CreateAccessToken("cli_a4ffeeda46bc9013", "VWqsXnY83R1p6psboMRu0evFRRnEc5kD");
+            var requestData = RequestData.CreateAccessToken(GlobalConfig.AppId, GlobalConfig.AppSecret);
             var result = await _feiShuHttpApi.GetTenantAccessToken(requestData);
 
             tokenResult.Access_token = result["tenant_access_token"].ToString();
