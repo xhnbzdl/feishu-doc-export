@@ -62,8 +62,8 @@ namespace feishu_doc_export
 
                 await DownLoadDocument(fileExt, item.ObjToken, item.ObjType);
             }
-
-            Console.WriteLine("文档已全部导出" + (noSupportExportFiles.Any() ? "以下是所有不支持导出的文档" : ""));
+            Console.WriteLine("—————————————————————————————文档已全部导出—————————————————————————————");
+            Console.WriteLine(noSupportExportFiles.Any() ? "以下是所有不支持导出的文档" : "");
 
             // 输出不支持导入的文档
             for (int i = 0; i < noSupportExportFiles.Count; i++)
