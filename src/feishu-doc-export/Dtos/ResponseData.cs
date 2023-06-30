@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace feishu_doc_export
+namespace feishu_doc_export.Dtos
 {
-    public class ResponseData: ResponseData<object>
+    public class ResponseData : ResponseData<object>
     {
     }
 
