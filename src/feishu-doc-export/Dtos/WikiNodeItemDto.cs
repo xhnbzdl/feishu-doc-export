@@ -52,15 +52,4 @@ namespace feishu_doc_export.Dtos
 
         public string Owner { get; set; }
     }
-
-    public class WikiNodePagedResult
-    {
-        public List<WikiNodeItemDto> Items { get; set; }
-
-        [JsonPropertyName("page_token")]
-        public string PageToken { get; set; }
-
-        [JsonPropertyName("has_more")]
-        public bool HasMore { get; set; }
-    }
 }
