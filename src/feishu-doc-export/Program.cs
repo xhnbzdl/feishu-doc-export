@@ -1,7 +1,10 @@
 ﻿
 using feishu_doc_export.Dtos;
+using feishu_doc_export.Helper;
 using feishu_doc_export.HttpApi;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using WebApiClientCore;
@@ -24,14 +27,14 @@ namespace feishu_doc_export
             }
             else
             {
-                Console.WriteLine("请输入飞书自建应用的AppId：");
-                GlobalConfig.AppId = Console.ReadLine();
-                Console.WriteLine("请输入飞书自建应用的AppSecret：");
-                GlobalConfig.AppSecret = Console.ReadLine();
-                Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
-                GlobalConfig.WikiSpaceId = Console.ReadLine();
-                Console.WriteLine("请输入文档导出的目录位置：");
-                GlobalConfig.ExportPath = Console.ReadLine();
+                //Console.WriteLine("请输入飞书自建应用的AppId：");
+                //GlobalConfig.AppId = Console.ReadLine();
+                //Console.WriteLine("请输入飞书自建应用的AppSecret：");
+                //GlobalConfig.AppSecret = Console.ReadLine();
+                //Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
+                //GlobalConfig.WikiSpaceId = Console.ReadLine();
+                //Console.WriteLine("请输入文档导出的目录位置：");
+                //GlobalConfig.ExportPath = Console.ReadLine();
             }
 
 
@@ -68,8 +71,14 @@ namespace feishu_doc_export
 
             Console.WriteLine($"正在加载知识库【{wikiSpaceInfo.Space.Name}】的所有文档信息，请耐心等待...");
 
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             // 获取知识库下的所有文档
             var wikiNodes = await GetAllWikiNode(GlobalConfig.WikiSpaceId);
+
+            // 文档路径映射字典
+            DocumentPathGenerator.GenerateDocumentPaths(wikiNodes, GlobalConfig.ExportPath);
 
             // 不支持导出的文件
             List<string> noSupportExportFiles = new List<string>();
@@ -101,6 +110,7 @@ namespace feishu_doc_export
 
                 await DownLoadDocument(fileExt, item.ObjToken, item.ObjType);
             }
+
             Console.WriteLine("—————————————————————————————文档已全部导出—————————————————————————————");
             Console.WriteLine(noSupportExportFiles.Any() ? "以下是所有不支持导出的文档" : "");
 
@@ -109,6 +119,12 @@ namespace feishu_doc_export
             {
                 Console.WriteLine($"{i + 1}.【{noSupportExportFiles[i]}】");
             }
+
+            stopwatch.Stop();
+            TimeSpan elapsedTime = stopwatch.Elapsed;
+            // 输出执行时间（以秒为单位）
+            double seconds = elapsedTime.TotalSeconds;
+            Console.WriteLine($"程序执行结束，总耗时{seconds}（秒）");
 
             Console.ReadKey();
         }
@@ -337,26 +353,25 @@ namespace feishu_doc_export
         /// <param name="token"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        static async Task DownLoadDocument(string fileExtension, string token, string type)
+        static async Task DownLoadDocument(string fileExtension, string objToken, string type)
         {
-            var exportTaskDto = await CreateExportTask(fileExtension, token, type);
+            var exportTaskDto = await CreateExportTask(fileExtension, objToken, type);
 
-            var exportTaskResult = await QueryExportTaskResult(exportTaskDto.Ticket, token);
+            var exportTaskResult = await QueryExportTaskResult(exportTaskDto.Ticket, objToken);
             var taskInfo = exportTaskResult.Result;
 
             if (taskInfo.JobErrorMsg == "success")
             {
                 var bytes = await DownLoad(taskInfo.FileToken);
 
-                var savefileName = taskInfo.FileName + "." + fileExtension;
-                // 替换文件名中的非法字符
-                savefileName = Regex.Replace(savefileName, @"[\\/:\*\?""<>\|]", "-");
+                var saveFileName = DocumentPathGenerator.GetDocumentPath(objToken) + "." + fileExtension;
 
-                var filePath = Path.Combine(GlobalConfig.ExportPath, savefileName);
+                var filePath = Path.Combine(GlobalConfig.ExportPath, saveFileName);
 
-                File.WriteAllBytes(filePath, bytes);
+                filePath.Save(bytes);
             }
         }
         #endregion
+
     }
 }
