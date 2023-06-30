@@ -134,7 +134,7 @@ namespace feishu_doc_export
         /// <param name="pageToken">分页token，第一次查询没有</param>
         /// <param name="parentNodeToken">父节点token</param>
         /// <returns></returns>
-        static async Task<WikiNodePagedResult> GetWikiNodeList(string spaceId, string pageToken = null, string parentNodeToken = null)
+        static async Task<PagedResult<WikiNodeItemDto>> GetWikiNodeList(string spaceId, string pageToken = null, string parentNodeToken = null)
         {
             StringBuilder urlBuilder = new StringBuilder($"{FeiShuConsts.OpenApiEndPoint}/open-apis/wiki/v2/spaces/{spaceId}/nodes?page_size=50");// page_size=50
             if (!string.IsNullOrWhiteSpace(pageToken))
