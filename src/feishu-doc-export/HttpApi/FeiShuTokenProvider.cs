@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using WebApiClientCore.Extensions.OAuths;
 using WebApiClientCore.Extensions.OAuths.TokenProviders;
 
-namespace feishu_doc_export
+namespace feishu_doc_export.HttpApi
 {
     public class FeiShuTokenProvider : TokenProvider
     {
@@ -21,7 +21,7 @@ namespace feishu_doc_export
 
         protected override async Task<TokenResult> RefreshTokenAsync(IServiceProvider serviceProvider, string refresh_token)
         {
-            return await this.RequestTokenAsync(serviceProvider);
+            return await RequestTokenAsync(serviceProvider);
         }
 
         protected override async Task<TokenResult> RequestTokenAsync(IServiceProvider serviceProvider)

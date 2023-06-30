@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 using WebApiClientCore;
 using WebApiClientCore.Attributes;
 
-namespace feishu_doc_export
+namespace feishu_doc_export.HttpApi
 {
     [HttpHost(FeiShuConsts.OpenApiEndPoint)]
-    public interface IFeiShuHttpApi: IHttpApi
+    public interface IFeiShuHttpApi : IHttpApi
     {
         /// <summary>
         /// 获取自建应用的AccessToken
@@ -22,13 +22,32 @@ namespace feishu_doc_export
         Task<AccessTokenDto> GetTenantAccessToken(object request);
 
         /// <summary>
+        /// 获取所有的知识库
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("/open-apis/wiki/v2/spaces")]
+        [OAuthToken]
+        [JsonReturn]
+        Task<ResponseData<PagedResult<WikiSpaceDto>>> GetWikiSpaces();
+
+        /// <summary>
+        /// 获取知识库详细信息
+        /// </summary>
+        /// <param name="spaceId"></param>
+        /// <returns></returns>
+        [HttpGet("/open-apis/wiki/v2/spaces/{spaceId}")]
+        [OAuthToken]
+        [JsonReturn]
+        Task<ResponseData<WikiSpaceInfo>> GetWikiSpaceInfo(string spaceId);
+
+        /// <summary>
         /// 获取知识空间子节点列表
         /// </summary>
         /// <returns></returns>
         [HttpGet]
         [OAuthToken]
         [JsonReturn]
-        Task<ResponseData<WikiNodePagedResult>> GetWikeNodeList([Uri] string url);
+        Task<ResponseData<PagedResult<WikiNodeItemDto>>> GetWikeNodeList([Uri] string url);
 
         /// <summary>
         /// 创建文档导出任务结果
