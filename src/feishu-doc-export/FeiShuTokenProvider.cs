@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using feishu_doc_export.Dtos;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,8 +31,9 @@ namespace feishu_doc_export
             var requestData = RequestData.CreateAccessToken(GlobalConfig.AppId, GlobalConfig.AppSecret);
             var result = await _feiShuHttpApi.GetTenantAccessToken(requestData);
 
-            tokenResult.Access_token = result["tenant_access_token"].ToString();
-            tokenResult.Refresh_token = tokenResult.Access_token;
+            tokenResult.Access_token = result.TenantAccessToken;
+            tokenResult.Refresh_token = result.TenantAccessToken;
+            tokenResult.Expires_in = result.Expire;
 
             return tokenResult;
         }

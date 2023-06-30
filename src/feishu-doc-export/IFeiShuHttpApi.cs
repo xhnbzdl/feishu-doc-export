@@ -19,7 +19,7 @@ namespace feishu_doc_export
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("/open-apis/auth/v3/tenant_access_token/internal")]
-        Task<Dictionary<string,object>> GetTenantAccessToken(object request);
+        Task<AccessTokenDto> GetTenantAccessToken(object request);
 
         /// <summary>
         /// 获取知识空间子节点列表
