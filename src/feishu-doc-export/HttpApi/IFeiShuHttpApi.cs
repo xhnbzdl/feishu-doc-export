@@ -31,6 +31,16 @@ namespace feishu_doc_export.HttpApi
         Task<ResponseData<PagedResult<WikiSpaceDto>>> GetWikiSpaces();
 
         /// <summary>
+        /// 获取知识库详细信息
+        /// </summary>
+        /// <param name="spaceId"></param>
+        /// <returns></returns>
+        [HttpGet("/open-apis/wiki/v2/spaces/{spaceId}")]
+        [OAuthToken]
+        [JsonReturn]
+        Task<ResponseData<WikiSpaceInfo>> GetWikiSpaceInfo(string spaceId);
+
+        /// <summary>
         /// 获取知识空间子节点列表
         /// </summary>
         /// <returns></returns>

@@ -24,13 +24,13 @@ namespace feishu_doc_export
             }
             else
             {
-                Console.WriteLine("请输入飞书自建应用的AppId");
+                Console.WriteLine("请输入飞书自建应用的AppId：");
                 GlobalConfig.AppId = Console.ReadLine();
-                Console.WriteLine("请输入飞书自建应用的AppSecret");
+                Console.WriteLine("请输入飞书自建应用的AppSecret：");
                 GlobalConfig.AppSecret = Console.ReadLine();
-                Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）");
+                Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
                 GlobalConfig.WikiSpaceId = Console.ReadLine();
-                Console.WriteLine("请输入文档导出的目录位置");
+                Console.WriteLine("请输入文档导出的目录位置：");
                 GlobalConfig.ExportPath = Console.ReadLine();
             }
 
@@ -61,12 +61,12 @@ namespace feishu_doc_export
                 {
                     Console.WriteLine("没有可支持导出的知识库");
                     Environment.Exit(0);
-                }
-
-                
+                }   
             }
 
-            Console.WriteLine("正在加载知识库的所有文档信息，请耐心等待...");
+            var wikiSpaceInfo = (await feiShuHttpApi.GetWikiSpaceInfo(GlobalConfig.WikiSpaceId)).Data;
+
+            Console.WriteLine($"正在加载知识库【{wikiSpaceInfo.Space.Name}】的所有文档信息，请耐心等待...");
 
             // 获取知识库下的所有文档
             var wikiNodes = await GetAllWikiNode(GlobalConfig.WikiSpaceId);
@@ -109,6 +109,8 @@ namespace feishu_doc_export
             {
                 Console.WriteLine($"{i + 1}.【{noSupportExportFiles[i]}】");
             }
+
+            Console.ReadKey();
         }
 
         /// <summary>

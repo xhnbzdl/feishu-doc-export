@@ -21,4 +21,9 @@ namespace feishu_doc_export.Dtos
 
         public string Visibility { get; set; }
     }
+
+    public class WikiSpaceInfo
+    {
+        public WikiSpaceDto Space { get; set; }
+    }
 }
