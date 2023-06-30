@@ -27,14 +27,14 @@ namespace feishu_doc_export
             }
             else
             {
-                //Console.WriteLine("请输入飞书自建应用的AppId：");
-                //GlobalConfig.AppId = Console.ReadLine();
-                //Console.WriteLine("请输入飞书自建应用的AppSecret：");
-                //GlobalConfig.AppSecret = Console.ReadLine();
-                //Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
-                //GlobalConfig.WikiSpaceId = Console.ReadLine();
-                //Console.WriteLine("请输入文档导出的目录位置：");
-                //GlobalConfig.ExportPath = Console.ReadLine();
+                Console.WriteLine("请输入飞书自建应用的AppId：");
+                GlobalConfig.AppId = Console.ReadLine();
+                Console.WriteLine("请输入飞书自建应用的AppSecret：");
+                GlobalConfig.AppSecret = Console.ReadLine();
+                Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
+                GlobalConfig.WikiSpaceId = Console.ReadLine();
+                Console.WriteLine("请输入文档导出的目录位置：");
+                GlobalConfig.ExportPath = Console.ReadLine();
             }
 
 

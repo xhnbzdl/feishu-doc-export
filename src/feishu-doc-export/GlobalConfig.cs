@@ -8,13 +8,13 @@ namespace feishu_doc_export
 {
     public static class GlobalConfig
     {
-        public static string AppId { get; set; } = "cli_a4ffeeda46bc9013";
+        public static string AppId { get; set; }
 
-        public static string AppSecret { get; set; } = "VWqsXnY83R1p6psboMRu0evFRRnEc5kD";
+        public static string AppSecret { get; set; }
 
-        public static string ExportPath { get; set; } = "D:\\temp\\测试飞书文档";
+        public static string ExportPath { get; set; }
 
-        public static string WikiSpaceId { get; set; } = "7250298174215471107";
+        public static string WikiSpaceId { get; set; }
 
         /// <summary>
         /// 飞书支持导出的文件类型和导出格式
