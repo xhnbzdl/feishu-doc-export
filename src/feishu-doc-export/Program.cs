@@ -14,14 +14,25 @@ namespace feishu_doc_export
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("请输入飞书自建应用的AppId");
-            GlobalConfig.AppId = Console.ReadLine();
-            Console.WriteLine("请输入飞书自建应用的AppSecret");
-            GlobalConfig.AppSecret = Console.ReadLine();
-            Console.WriteLine("请输入要导出的知识库Id");
-            GlobalConfig.WikiSpaceId = Console.ReadLine();
-            Console.WriteLine("请输入文档导出的目录位置");
-            GlobalConfig.ExportPath = Console.ReadLine();
+            if (args.Length > 0)
+            {
+                GlobalConfig.AppId = GetCommandLineArg(args, "--appId=");
+                GlobalConfig.AppSecret = GetCommandLineArg(args, "--appSecret=");
+                GlobalConfig.WikiSpaceId = GetCommandLineArg(args, "--spaceId=");
+                GlobalConfig.ExportPath = GetCommandLineArg(args, "--exportPath=");
+            }
+            else
+            {
+                Console.WriteLine("请输入飞书自建应用的AppId");
+                GlobalConfig.AppId = Console.ReadLine();
+                Console.WriteLine("请输入飞书自建应用的AppSecret");
+                GlobalConfig.AppSecret = Console.ReadLine();
+                Console.WriteLine("请输入要导出的知识库Id");
+                GlobalConfig.WikiSpaceId = Console.ReadLine();
+                Console.WriteLine("请输入文档导出的目录位置");
+                GlobalConfig.ExportPath = Console.ReadLine();
+            }
+
 
             IOC.Init();
 
@@ -31,11 +42,11 @@ namespace feishu_doc_export
 
             // 获取知识库下的所有文档
             var wikiNodes = await GetAllWikiNode(GlobalConfig.WikiSpaceId);
-            //var wikiNodes = GetWikiChildNode(GlobalConfig.WikiSpaceId, "wikcnATdEp3Y6UyjAtv4KPjGrcg").Result;
 
             // 不支持导出的文件
             List<string> noSupportExportFiles = new List<string>();
 
+            // 记录导出的文档数量
             int count = 1;
             foreach (var item in wikiNodes)
             {
@@ -52,7 +63,7 @@ namespace feishu_doc_export
                 // 文件名超出长度限制，不支持导出
                 if (item.Title.Length > 64)
                 {
-                    var left64FileName = item.Title.PadLeft(64) + "...";
+                    var left64FileName = item.Title.PadLeft(61) + $"···.{fileExt}";
                     noSupportExportFiles.Add($"(文件名超长){left64FileName}");
                     Console.WriteLine($"文档【{left64FileName}】的文件命名长度超出Windows文件命名的长度限制，已忽略");
                     continue;
@@ -70,6 +81,48 @@ namespace feishu_doc_export
             {
                 Console.WriteLine($"{i + 1}.【{noSupportExportFiles[i]}】");
             }
+        }
+
+        /// <summary>
+        /// 获取命令行参数值
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="parameterName"></param>
+        /// <returns></returns>
+        static string GetCommandLineArg(string[] args, string parameterName)
+        {
+            // 参数值
+            string paraValue = string.Empty;
+            // 是否有匹配的参数
+            bool found = false;
+            foreach (string arg in args)
+            {
+                if (arg.StartsWith(parameterName))
+                {
+                    paraValue = arg.Substring(parameterName.Length);
+                    found = true;
+                }
+            }
+
+            if (!found)
+            {
+                Console.WriteLine($"没有找到参数：{parameterName}.");
+                Console.WriteLine("请填写以下所有参数：");
+                Console.WriteLine("  --appId           飞书自建应用的AppId.");
+                Console.WriteLine("  --appSecret       飞书自建应用的AppSecret.");
+                Console.WriteLine("  --spaceId         飞书导出的知识库Id.");
+                Console.WriteLine("  --exportPath      文档导出的目录位置.");
+                Environment.Exit(0);
+            }
+
+            // 参数值为空
+            if (string.IsNullOrWhiteSpace(paraValue))
+            {
+                Console.WriteLine($"参数{parameterName}不能为空");
+                Environment.Exit(0);
+            }
+
+            return paraValue;
         }
 
         #region 获取所有的文档节点
@@ -197,6 +250,13 @@ namespace feishu_doc_export
             return null;
         }
 
+        /// <summary>
+        /// 查询导出任务的结果
+        /// </summary>
+        /// <param name="ticket"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         static async Task<ExportTaskResultDto> QueryExportTaskResult(string ticket, string token)
         {
             int status;
@@ -225,6 +285,11 @@ namespace feishu_doc_export
             return data;
         }
 
+        /// <summary>
+        /// 下载文档文件
+        /// </summary>
+        /// <param name="fileToken"></param>
+        /// <returns></returns>
         static async Task<byte[]> DownLoad(string fileToken)
         {
             var result = await feiShuHttpApi.DownLoad(fileToken);
@@ -232,6 +297,13 @@ namespace feishu_doc_export
             return result;
         }
 
+        /// <summary>
+        /// 下载文档到本地
+        /// </summary>
+        /// <param name="fileExtension"></param>
+        /// <param name="token"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
         static async Task DownLoadDocument(string fileExtension, string token, string type)
         {
             var exportTaskDto = await CreateExportTask(fileExtension, token, type);
