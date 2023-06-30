@@ -31,11 +31,9 @@ namespace feishu_doc_export
             var requestData = RequestData.CreateAccessToken(GlobalConfig.AppId, GlobalConfig.AppSecret);
             var result = await _feiShuHttpApi.GetTenantAccessToken(requestData);
 
-            tokenResult.Access_token = result["tenant_access_token"].ToString();
-            tokenResult.Refresh_token = tokenResult.Access_token;
-            // 获取过期时间
-            int.TryParse(result["expire"].ToString(), out int expire);
-            tokenResult.Expires_in = expire;
+            tokenResult.Access_token = result.TenantAccessToken;
+            tokenResult.Refresh_token = result.TenantAccessToken;
+            tokenResult.Expires_in = result.Expire;
 
             return tokenResult;
         }
