@@ -33,6 +33,9 @@ namespace feishu_doc_export
 
             tokenResult.Access_token = result["tenant_access_token"].ToString();
             tokenResult.Refresh_token = tokenResult.Access_token;
+            // 获取过期时间
+            int.TryParse(result["expire"].ToString(), out int expire);
+            tokenResult.Expires_in = expire;
 
             return tokenResult;
         }
