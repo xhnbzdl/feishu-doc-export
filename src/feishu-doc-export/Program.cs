@@ -1,5 +1,6 @@
 ﻿
 using feishu_doc_export.Dtos;
+using feishu_doc_export.HttpApi;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Text.RegularExpressions;

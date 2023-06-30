@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 using WebApiClientCore;
 using WebApiClientCore.Attributes;
 
-namespace feishu_doc_export
+namespace feishu_doc_export.HttpApi
 {
     [HttpHost(FeiShuConsts.OpenApiEndPoint)]
-    public interface IFeiShuHttpApi: IHttpApi
+    public interface IFeiShuHttpApi : IHttpApi
     {
         /// <summary>
         /// 获取自建应用的AccessToken
