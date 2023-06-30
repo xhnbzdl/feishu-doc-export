@@ -26,7 +26,9 @@ namespace feishu_doc_export
         /// </summary>
         /// <returns></returns>
         [HttpGet("/open-apis/wiki/v2/spaces")]
-        Task<PagedResult<WikiSpaceDto>> GetWikiSpaces();
+        [OAuthToken]
+        [JsonReturn]
+        Task<ResponseData<PagedResult<WikiSpaceDto>>> GetWikiSpaces();
 
         /// <summary>
         /// 获取知识空间子节点列表

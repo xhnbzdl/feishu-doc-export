@@ -18,7 +18,7 @@ namespace feishu_doc_export
             {
                 GlobalConfig.AppId = GetCommandLineArg(args, "--appId=");
                 GlobalConfig.AppSecret = GetCommandLineArg(args, "--appSecret=");
-                GlobalConfig.WikiSpaceId = GetCommandLineArg(args, "--spaceId=");
+                GlobalConfig.WikiSpaceId = GetCommandLineArg(args, "--spaceId=", true);
                 GlobalConfig.ExportPath = GetCommandLineArg(args, "--exportPath=");
             }
             else
@@ -27,7 +27,7 @@ namespace feishu_doc_export
                 GlobalConfig.AppId = Console.ReadLine();
                 Console.WriteLine("请输入飞书自建应用的AppSecret");
                 GlobalConfig.AppSecret = Console.ReadLine();
-                Console.WriteLine("请输入要导出的知识库Id");
+                Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）");
                 GlobalConfig.WikiSpaceId = Console.ReadLine();
                 Console.WriteLine("请输入文档导出的目录位置");
                 GlobalConfig.ExportPath = Console.ReadLine();
@@ -35,8 +35,35 @@ namespace feishu_doc_export
 
 
             IOC.Init();
-
             feiShuHttpApi = IOC.IoContainer.GetService<IFeiShuHttpApi>();
+
+            if (string.IsNullOrWhiteSpace(GlobalConfig.WikiSpaceId))
+            {
+                var wikiSpaces = await feiShuHttpApi.GetWikiSpaces();
+                var wikiSpaceDict = wikiSpaces.Data.Items
+                    .Select((x, i) => new { Index = i + 1, WikiSpace = x })
+                    .ToDictionary(x => x.Index, x => x.WikiSpace);
+
+                if (wikiSpaceDict.Any())
+                {
+                    Console.WriteLine($"以下是所有支持导出的知识库：");
+
+                    foreach (var item in wikiSpaceDict)
+                    {
+                        Console.WriteLine($"【{item.Key}.】{item.Value.Name}");
+                    }
+                    Console.WriteLine("请选择知识库（输入知识库的序号）：");
+                    var index = int.Parse(Console.ReadLine());
+                    GlobalConfig.WikiSpaceId = wikiSpaceDict[index].Spaceid;
+                }
+                else
+                {
+                    Console.WriteLine("没有可支持导出的知识库");
+                    Environment.Exit(0);
+                }
+
+                
+            }
 
             Console.WriteLine("正在加载知识库的所有文档信息，请耐心等待...");
 
@@ -89,7 +116,7 @@ namespace feishu_doc_export
         /// <param name="args"></param>
         /// <param name="parameterName"></param>
         /// <returns></returns>
-        static string GetCommandLineArg(string[] args, string parameterName)
+        static string GetCommandLineArg(string[] args, string parameterName, bool canNull = false)
         {
             // 参数值
             string paraValue = string.Empty;
@@ -104,22 +131,25 @@ namespace feishu_doc_export
                 }
             }
 
-            if (!found)
+            if (!canNull)
             {
-                Console.WriteLine($"没有找到参数：{parameterName}.");
-                Console.WriteLine("请填写以下所有参数：");
-                Console.WriteLine("  --appId           飞书自建应用的AppId.");
-                Console.WriteLine("  --appSecret       飞书自建应用的AppSecret.");
-                Console.WriteLine("  --spaceId         飞书导出的知识库Id.");
-                Console.WriteLine("  --exportPath      文档导出的目录位置.");
-                Environment.Exit(0);
-            }
+                if (!found)
+                {
+                    Console.WriteLine($"没有找到参数：{parameterName}.");
+                    Console.WriteLine("请填写以下所有参数：");
+                    Console.WriteLine("  --appId           飞书自建应用的AppId.");
+                    Console.WriteLine("  --appSecret       飞书自建应用的AppSecret.");
+                    Console.WriteLine("  --spaceId         飞书导出的知识库Id.");
+                    Console.WriteLine("  --exportPath      文档导出的目录位置.");
+                    Environment.Exit(0);
+                }
 
-            // 参数值为空
-            if (string.IsNullOrWhiteSpace(paraValue))
-            {
-                Console.WriteLine($"参数{parameterName}不能为空");
-                Environment.Exit(0);
+                // 参数值为空
+                if (string.IsNullOrWhiteSpace(paraValue))
+                {
+                    Console.WriteLine($"参数{parameterName}不能为空");
+                    Environment.Exit(0);
+                }
             }
 
             return paraValue;
