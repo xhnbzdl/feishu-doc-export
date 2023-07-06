@@ -4,13 +4,13 @@
 
 最近也是公司办公软件从飞书切换回了企业微信，自然就产生了一些文档要迁移的问题，由于文档量过多（大概有700多个），无论是从飞书手动下载为Word或PDF格式的文档，还是将内容复制到本地新建Markdown文件都是一件极为繁琐的事情。于是便找到了两个GitHub上已有的飞书文档导出工具`Feishu2MD`和`feishu-backup`，但是他们都有一些问题不太满足我的需求。
 
-## 现有方案的不满足
+### 现有方案的不满足
 
 **feishu-backup：**
 
 官方地址：[dicarne/feishu-backup: 用于备份飞书文档，可以将飞书文档转成markdown下载。 (github.com)](https://github.com/dicarne/feishu-backup)
 
-1. 因为它是网页版，下载速度太慢。有一次使用线上版选择了其中一个飞书文档节点下的所有文档（大概200-300个），下载了1个多小时还没有好。
+1. 因为它是网页版，下载速度太慢。有一次使用线上版选择了其中一个飞书文档节点下的所有文档（大概200-300个），下载了1个多小时还没有好，可能是卡死了。
 
 2. 因为它的下载方式是把选择的全部文档打包成压缩包后才会在浏览器返回给你，如果这个等待的过程中途断网或者电脑卡顿要重启，那你就白等那么长时间了。
 
@@ -22,26 +22,18 @@
 
 我虽然没用实际使用过它，但我阅读它的官方文档后发现它的核心问题是一次只能下载一个文档。
 
-## 我的需求
+### 我的需求
 
 - 一次导出知识库下的所有文档，包含文档和表格
 - 导出的文档目录结构保持和原飞书文档一致
 - 导出速度不要太慢
 - 对于文档导出的格式没有要求，`docx`和`xlsx`即可
 
-## 我的实现
+基于以上的种种原因呢，我决定自己动手写一个满足自己需求的程序来解决这个问题。这里我使用的是支持跨平台的.net core进行开发，最终打包程序可支持在`windows`、`linux`、`mac`系统上运行。这里将不赘述具体的实现过程，直接展示最终的效果图吧。
 
-> 基于以上的种种原因呢，我决定自己动手写一个满足自己需求的程序来解决这个问题。这里我使用的是支持跨平台的.net core进行开发，最终打包程序可支持在`windows`、`linux`、`mac`系统上运行。这里将不赘述具体的实现过程，直接展示最终的效果图吧。
+## 如何使用
 
-### 下载程序
-
-
-
-### 如何使用
-
-下载后进入程序可执行文件的目录，windows环境的可执行文件为`feishu-doc-export.exe`，linux和mac环境的可执行文件为`feishu-doc-export`没有后缀。
-
-#### 获取AppId和AppSecret
+### 获取AppId和AppSecret
 
 - 进入飞书[开发者后台](https://open.feishu.cn/app)
 - 创建企业自建应用，信息随意填写
@@ -50,9 +42,20 @@
 - 为应用添加知识库的管理权限
 - 打开凭证与基础信息，获取 `App ID` 和 `App Secret`
 
-#### 命令行执行
+### 下载程序
 
-命令行所有参数如下：
+> **[v0.0.2.1](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.2.1)**版本为第一个正式发布版本，从`v0.0.2.1`往后迭代的每一个版本都将提供免安装的可执行程序。下载地址：[（Releases）feishu-doc-export](https://github.com/xhnbzdl/feishu-doc-export/releases)
+
+- windows-x64系统，下载`feishu-doc-export-win-x64.zip`
+
+- mac-osx-x64系统，下载`feishu-doc-export-mac-osx-x64.zip`
+- linux-x64系统，下载`feishu-doc-export-linux-x64.zip`
+
+下载并解压即可得到程序可执行文件，windows环境的可执行文件为`feishu-doc-export.exe`，`linux`和`mac`环境的可执行文件为`feishu-doc-export`没有后缀。
+
+### 命令行执行
+
+在可执行文件的目录打开终端，命令行所有参数如下：
 
 ```
 请填写以下所有参数：
@@ -91,9 +94,9 @@
 
 ![image-20230706105636270](https://github.com/xhnbzdl/feishu-doc-export/assets/84184815/aea85f4b-51bc-4e77-a047-1b52b1a75c23)
 
-#### 逐步执行
+### 逐步执行
 
-1. 第一步（win，mac）双击运行程序，输入飞书自建应用的配置，并输入文档要导出的目录位置。
+1. 第一步，（win，mac）双击运行程序，输入飞书自建应用的配置，并输入文档要导出的目录位置。
 
    `mac`和`linux`仍需执行命令`sudo chmod +x ./feishu-doc-export`来将文件设置为可执行文件。
 
@@ -101,15 +104,15 @@
 
    ![feishuexport_1](https://github.com/xhnbzdl/feishu-doc-export/assets/84184815/cd8b8ab1-ec46-4d19-8844-794e58c305e8)
 
-2. 选择知识库后自动导出
+2. 第二步，选择知识库后自动导出
 
    ![2](https://github.com/xhnbzdl/feishu-doc-export/assets/84184815/c1a09804-1d9c-414e-94f4-9a5be7230b22)
 
-3. 对比飞书原文档的目录结构
+3. 第三步，对比飞书原文档的目录结构
 
    ![feishu_wiki](https://github.com/xhnbzdl/feishu-doc-export/assets/84184815/ddc6f0c0-3ace-4498-8bc4-02effc5ee5ea)
 
-### 耗时测试
+## 耗时测试
 
 **700**多个文件导出到本地总耗时**25分钟**
 
