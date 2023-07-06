@@ -37,6 +37,11 @@ namespace feishu_doc_export
                 GlobalConfig.ExportPath = Console.ReadLine();
             }
 
+            if (!Directory.Exists(GlobalConfig.ExportPath))
+            {
+                Console.WriteLine($"指定的导出目录({GlobalConfig.ExportPath})不存在！！！");
+                Environment.Exit(0);
+            }
 
             IOC.Init();
             feiShuHttpApi = IOC.IoContainer.GetService<IFeiShuHttpApi>();
