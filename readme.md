@@ -44,7 +44,7 @@
 
 ### 下载程序
 
-> **[v0.0.2.1](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.2.1)**版本为第一个正式发布版本，从`v0.0.2.1`往后迭代的每一个版本都将提供免安装的可执行程序。下载地址：[（Releases）feishu-doc-export](https://github.com/xhnbzdl/feishu-doc-export/releases)
+> [v0.0.2.1](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.2.1)版本为第一个正式发布版本，从`v0.0.2.1`往后迭代的每一个版本都将提供免安装的可执行程序。下载地址：[（Releases）feishu-doc-export](https://github.com/xhnbzdl/feishu-doc-export/releases)
 
 - windows-x64系统，下载`feishu-doc-export-win-x64.zip`
 
@@ -67,7 +67,7 @@
 
 - win环境
 
-  ```
+  ```powershell
   # 指定知识库导出
   ./feishu-doc-export.exe --appId=111111 --appSecret=2222222  --spaceId=333333 --exportPath=E:\temp\测试飞书文档
   # 不指定知识库导出
@@ -78,14 +78,14 @@
 
   **注意！！！**首次使用时需要将文件授权为可执行文件
 
-  ```
+  ```shell
   # 将文件授权为可执行文件
   sudo chmod +x ./feishu-doc-export
   ```
 
   执行时最好使用`sudo`，否则可能出现权限不足，导致在保存文档时无法创建文件目录
 
-  ```
+  ```shell
   # 执行不指定知识库的导出
   sudo ./feishu-doc-export --appId=111111 --appSecret=222222 --exportPath=/home/ubuntu/feishu-document
   ```
