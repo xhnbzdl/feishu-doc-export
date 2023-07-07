@@ -1,4 +1,7 @@
 ﻿
+using Aspose.Words;
+using Aspose.Words.Drawing;
+using Aspose.Words.Saving;
 using feishu_doc_export.Dtos;
 using feishu_doc_export.Helper;
 using feishu_doc_export.HttpApi;
@@ -18,11 +21,14 @@ namespace feishu_doc_export
 
         static async Task Main(string[] args)
         {
+            GlobalConfig.InitAsposeLicense();
+
             if (args.Length > 0)
             {
                 GlobalConfig.AppId = GetCommandLineArg(args, "--appId=");
                 GlobalConfig.AppSecret = GetCommandLineArg(args, "--appSecret=");
                 GlobalConfig.WikiSpaceId = GetCommandLineArg(args, "--spaceId=", true);
+                GlobalConfig.DocSaveType = GetCommandLineArg(args, "--saveType=", true);
                 GlobalConfig.ExportPath = GetCommandLineArg(args, "--exportPath=");
             }
             else
@@ -31,6 +37,8 @@ namespace feishu_doc_export
                 GlobalConfig.AppId = Console.ReadLine();
                 Console.WriteLine("请输入飞书自建应用的AppSecret：");
                 GlobalConfig.AppSecret = Console.ReadLine();
+                Console.WriteLine("请输入文档导出的文件类型（可选值：docx和md，为空或其他非可选值则默认为docx）：");
+                GlobalConfig.DocSaveType = Console.ReadLine();
                 Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
                 GlobalConfig.WikiSpaceId = Console.ReadLine();
                 Console.WriteLine("请输入文档导出的目录位置：");
@@ -69,7 +77,7 @@ namespace feishu_doc_export
                 {
                     Console.WriteLine("没有可支持导出的知识库");
                     Environment.Exit(0);
-                }   
+                }
             }
 
             var wikiSpaceInfo = (await feiShuHttpApi.GetWikiSpaceInfo(GlobalConfig.WikiSpaceId)).Data;
@@ -94,6 +102,14 @@ namespace feishu_doc_export
             {
 
                 var isSupport = GlobalConfig.GetFileExtension(item.ObjType, out string fileExt);
+                // 用于展示的文件后缀名称
+                var showFileExt = fileExt;
+
+                if (fileExt == "docx" && GlobalConfig.DocSaveType == "md")
+                {
+                    showFileExt = GlobalConfig.DocSaveType;
+                }
+
                 // 如果该文件类型不支持导出
                 if (!isSupport)
                 {
@@ -111,7 +127,7 @@ namespace feishu_doc_export
                     continue;
                 }
 
-                Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}.{fileExt}】");
+                Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}.{showFileExt}】");
 
                 await DownLoadDocument(fileExt, item.ObjToken, item.ObjType);
             }
@@ -159,11 +175,12 @@ namespace feishu_doc_export
             {
                 if (!found)
                 {
-                    Console.WriteLine($"没有找到参数：{parameterName}.");
+                    Console.WriteLine($"没有找到参数：{parameterName}");
                     Console.WriteLine("请填写以下所有参数：");
                     Console.WriteLine("  --appId           飞书自建应用的AppId.");
                     Console.WriteLine("  --appSecret       飞书自建应用的AppSecret.");
                     Console.WriteLine("  --spaceId         飞书导出的知识库Id.");
+                    Console.WriteLine("  --saveType        文档导出的文件类型（可选值：docx和md，为空或其他非可选值则默认为docx）.");
                     Console.WriteLine("  --exportPath      文档导出的目录位置.");
                     Environment.Exit(0);
                 }
@@ -373,10 +390,51 @@ namespace feishu_doc_export
 
                 var filePath = Path.Combine(GlobalConfig.ExportPath, saveFileName);
 
+                if (fileExtension == "docx" && GlobalConfig.DocSaveType == "md")
+                {
+                    SaveToMarkdownFile(bytes, filePath);
+                    return;
+                }
                 filePath.Save(bytes);
             }
         }
         #endregion
 
+        /// <summary>
+        /// 保存为Markdown文件
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="fileSavePath"></param>
+        static void SaveToMarkdownFile(byte[] bytes,string fileSavePath)
+        {
+            using (MemoryStream stream = new MemoryStream(bytes))
+            {
+                // 加载 Word 文档
+                Document doc = new Document(stream);
+
+                // 遍历文档中的所有形状（包括图片）
+                foreach (Shape shape in doc.GetChildNodes(NodeType.Shape, true))
+                {
+                    if (shape.HasImage)
+                    {
+                        // 清空图片描述
+                        shape.AlternativeText = "";
+                    }
+                }
+
+                // 创建Markdown保存选项
+                MarkdownSaveOptions saveOptions = new MarkdownSaveOptions();
+                // 文件保存的文件夹路径
+                var saveDirPath = Path.GetDirectoryName(fileSavePath);
+                // 设置文章中图片的存储路径
+                saveOptions.ImagesFolder = Path.Combine(saveDirPath, "images");
+                // 重构文件名
+                var fileName = Path.GetFileNameWithoutExtension(fileSavePath) + ".md";
+                // 文件最终的保存路径
+                var mdFileSavePath = Path.Combine(saveDirPath, fileName);
+                doc.Save(mdFileSavePath, saveOptions);
+            }
+
+        }
     }
 }
