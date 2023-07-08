@@ -9,17 +9,24 @@
 	<RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
-	<ItemGroup>
-		<TrimmerRootAssembly Include="mscorlib" />
-		<TrimmerRootAssembly Include="System.Xml" />
-		<TrimmerRootAssembly Include="System.Xml.ReaderWriter" />
-		<TrimmerRootAssembly Include="System.Private.Xml" />
-	</ItemGroup>
+
+
+	<Target Name="ConfigureTrimming" BeforeTargets="PrepareForILLink">
+		<ItemGroup>
+			<ManagedAssemblyToLink Condition="'%(Filename)' == 'Aspose.Words.Pdf2Word' or '%(Filename)' == 'libSkiaSharp'">
+				<IsTrimmable>true</IsTrimmable>
+			</ManagedAssemblyToLink>
+		</ItemGroup>
+
+		<ItemGroup>
+			<TrimmerRootAssembly Include="mscorlib" />
+			<TrimmerRootAssembly Include="System.Xml" />
+			<TrimmerRootAssembly Include="System.Xml.ReaderWriter" />
+			<TrimmerRootAssembly Include="System.Private.Xml" />
+		</ItemGroup>
+	</Target>
 	
 	
-	<ItemGroup>
-		<LinkerRoots Include="mscorlib" />
-	</ItemGroup>
   <ItemGroup>
     <PackageReference Include="Aspose.Words" Version="21.6.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.32" />
