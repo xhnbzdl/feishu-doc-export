@@ -12,14 +12,15 @@
   </PropertyGroup>
 
 
-
+	<!--解决使用了Aspose.Words库，裁剪打包后无法正常运行-->
 	<Target Name="ConfigureTrimming" BeforeTargets="PrepareForILLink">
 		<ItemGroup>
+			<!--指定要裁剪的库-->
 			<ManagedAssemblyToLink Condition="'%(Filename)' == 'Aspose.Words.Pdf2Word'">
 				<IsTrimmable>true</IsTrimmable>
 			</ManagedAssemblyToLink>
 		</ItemGroup>
-
+		<!--指定不裁剪的库-->
 		<ItemGroup>
 			<TrimmerRootAssembly Include="mscorlib" />
 			<TrimmerRootAssembly Include="System.Xml" />
