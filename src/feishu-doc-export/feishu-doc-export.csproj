@@ -7,13 +7,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
 	<RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
+	  <!--包含所有内容以进行自解压，解决libSkiaSharp无法打包到单文件-->
+	<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
   </PropertyGroup>
 
 
 
 	<Target Name="ConfigureTrimming" BeforeTargets="PrepareForILLink">
 		<ItemGroup>
-			<ManagedAssemblyToLink Condition="'%(Filename)' == 'Aspose.Words.Pdf2Word' or '%(Filename)' == 'libSkiaSharp'">
+			<ManagedAssemblyToLink Condition="'%(Filename)' == 'Aspose.Words.Pdf2Word'">
 				<IsTrimmable>true</IsTrimmable>
 			</ManagedAssemblyToLink>
 		</ItemGroup>

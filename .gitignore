@@ -396,4 +396,4 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-/src/feishu-doc-export/dist/win-x64
+/src/feishu-doc-export/dist/*
