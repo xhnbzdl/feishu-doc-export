@@ -220,10 +220,10 @@ namespace feishu_doc_export
 
                 if (fileExtension == "docx" && GlobalConfig.DocSaveType == "md")
                 {
-                    SaveToMarkdownFile(bytes, filePath);
+                    await SaveToMarkdownFile(bytes, filePath);
                     return;
                 }
-                filePath.Save(bytes);
+                await filePath.Save(bytes);
             }
         }
 
@@ -232,7 +232,7 @@ namespace feishu_doc_export
         /// </summary>
         /// <param name="bytes"></param>
         /// <param name="fileSavePath"></param>
-        static void SaveToMarkdownFile(byte[] bytes,string fileSavePath)
+        static async Task SaveToMarkdownFile(byte[] bytes,string fileSavePath)
         {
             using (MemoryStream stream = new MemoryStream(bytes))
             {
@@ -260,8 +260,35 @@ namespace feishu_doc_export
                 // 文件最终的保存路径
                 var mdFileSavePath = Path.Combine(saveDirPath, fileName);
                 doc.Save(mdFileSavePath, saveOptions);
+
+                // 处理 Markdown 文件，替换图片的引用路径为相对路径
+                var markdownContent = await File.ReadAllTextAsync(mdFileSavePath);
+                var replacedContent = ReplaceImagePath(markdownContent, saveOptions.ImagesFolder);
+                await File.WriteAllTextAsync(mdFileSavePath, replacedContent);
             }
 
+        }
+
+        private static string ReplaceImagePath(string markdownContent, string imagesDirectory)
+        {
+            // 正则表达式匹配图片引用语法 ![...](...)
+            var regex = new Regex(@"!\[.*?\]\((.*?)\)", RegexOptions.IgnoreCase);
+
+            var replacedContent = regex.Replace(markdownContent, match =>
+            {
+                var imagePath = match.Groups[1].Value;
+
+                // 如果图片引用路径是绝对路径，则将其替换为相对路径
+                if (Path.IsPathRooted(imagePath))
+                {
+                    var relativePath = Path.GetRelativePath(Path.GetDirectoryName(imagesDirectory), imagePath);
+                    return $"![...]({relativePath})";
+                }
+
+                return match.Value;
+            });
+
+            return replacedContent;
         }
     }
 }
