@@ -254,22 +254,29 @@ namespace feishu_doc_export
                 // 文件保存的文件夹路径
                 var saveDirPath = Path.GetDirectoryName(fileSavePath);
                 // 设置文章中图片的存储路径
-                saveOptions.ImagesFolder = Path.Combine(saveDirPath, "images");
+                saveOptions.ImagesFolder = Path.Combine(saveDirPath, "../images");
                 // 重构文件名
                 var fileName = Path.GetFileNameWithoutExtension(fileSavePath) + ".md";
                 // 文件最终的保存路径
                 var mdFileSavePath = Path.Combine(saveDirPath, fileName);
                 doc.Save(mdFileSavePath, saveOptions);
 
-                // 处理 Markdown 文件，替换图片的引用路径为相对路径
+                // 处理 Markdown 文件，替换图片和文档的引用路径为相对路径
                 var markdownContent = await File.ReadAllTextAsync(mdFileSavePath);
-                var replacedContent = ReplaceImagePath(markdownContent, saveOptions.ImagesFolder);
+                var replacedContent = ReplaceImagePath(markdownContent, mdFileSavePath);
+                replacedContent = ReplaceDocRefPath(replacedContent, mdFileSavePath);
                 await File.WriteAllTextAsync(mdFileSavePath, replacedContent);
             }
 
         }
 
-        private static string ReplaceImagePath(string markdownContent, string imagesDirectory)
+        /// <summary>
+        /// 替换图片引用路径
+        /// </summary>
+        /// <param name="markdownContent"></param>
+        /// <param name="currentDocPath"></param>
+        /// <returns></returns>
+        private static string ReplaceImagePath(string markdownContent, string currentDocPath)
         {
             // 正则表达式匹配图片引用语法 ![...](...)
             var regex = new Regex(@"!\[.*?\]\((.*?)\)", RegexOptions.IgnoreCase);
@@ -281,8 +288,39 @@ namespace feishu_doc_export
                 // 如果图片引用路径是绝对路径，则将其替换为相对路径
                 if (Path.IsPathRooted(imagePath))
                 {
-                    var relativePath = Path.GetRelativePath(Path.GetDirectoryName(imagesDirectory), imagePath);
+                    var relativePath = Path.GetRelativePath(Path.GetDirectoryName(currentDocPath), imagePath);
                     return $"![...]({relativePath})";
+                }
+
+                return match.Value;
+            });
+
+            return replacedContent;
+        }
+
+        /// <summary>
+        /// 替换文档引用路径
+        /// </summary>
+        /// <param name="markdownContent"></param>
+        /// <returns></returns>
+        private static string ReplaceDocRefPath(string markdownContent, string currentDocPath)
+        {
+            // 正则表达式匹配飞书文档的引用语法[](https://*.feishu.cn/wiki/nodeToken)
+            var regex = new Regex(@"\[(?<linkText>[^\]]+)\]\((https?://[^/]+\.feishu\.cn/wiki/(?<nodeToken>[^)]+))\)");
+
+            var replacedContent = regex.Replace(markdownContent, match =>
+            {
+                var fileExt = Path.GetExtension(currentDocPath);
+
+                var nodeToken = match.Groups["nodeToken"].Value;
+                var linkText = match.Groups["linkText"].Value;
+
+                // 所引用的文档是否存在（如：非当前知识库的文档）
+                var refDocPath = DocumentPathGenerator.GetDocumentPathByNodeToken(nodeToken);
+                if (!string.IsNullOrWhiteSpace(refDocPath))
+                {
+                    var relativePath = Path.GetRelativePath(Path.GetDirectoryName(currentDocPath), refDocPath);
+                    return $"[{linkText}]({relativePath}{fileExt})";
                 }
 
                 return match.Value;
