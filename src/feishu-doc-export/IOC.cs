@@ -48,6 +48,7 @@ namespace feishu_doc_export
             services.AddHttpApi<IFeiShuHttpApi>();            
             services.AddTokenProvider<IFeiShuHttpApi,FeiShuTokenProvider>();
 
+            services.AddTransient<IFeiShuHttpApiCaller,FeiShuHttpApiCaller>();
             return services;
         }
     }

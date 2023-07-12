@@ -17,7 +17,7 @@ namespace feishu_doc_export
 {
     internal class Program
     {
-        static IFeiShuHttpApi feiShuHttpApi;
+        static IFeiShuHttpApiCaller feiShuApiCaller;
 
         static async Task Main(string[] args)
         {
@@ -52,12 +52,12 @@ namespace feishu_doc_export
             }
 
             IOC.Init();
-            feiShuHttpApi = IOC.IoContainer.GetService<IFeiShuHttpApi>();
+            feiShuApiCaller = IOC.IoContainer.GetService<IFeiShuHttpApiCaller>();
 
             if (string.IsNullOrWhiteSpace(GlobalConfig.WikiSpaceId))
             {
-                var wikiSpaces = await feiShuHttpApi.GetWikiSpaces();
-                var wikiSpaceDict = wikiSpaces.Data.Items
+                var wikiSpaces = await feiShuApiCaller.GetWikiSpaces();
+                var wikiSpaceDict = wikiSpaces.Items
                     .Select((x, i) => new { Index = i + 1, WikiSpace = x })
                     .ToDictionary(x => x.Index, x => x.WikiSpace);
 
@@ -80,7 +80,7 @@ namespace feishu_doc_export
                 }
             }
 
-            var wikiSpaceInfo = (await feiShuHttpApi.GetWikiSpaceInfo(GlobalConfig.WikiSpaceId)).Data;
+            var wikiSpaceInfo = await feiShuApiCaller.GetWikiSpaceInfo(GlobalConfig.WikiSpaceId);
 
             Console.WriteLine($"正在加载知识库【{wikiSpaceInfo.Space.Name}】的所有文档信息，请耐心等待...");
 
@@ -88,7 +88,7 @@ namespace feishu_doc_export
             stopwatch.Start();
 
             // 获取知识库下的所有文档
-            var wikiNodes = await GetAllWikiNode(GlobalConfig.WikiSpaceId);
+            var wikiNodes = await feiShuApiCaller.GetAllWikiNode(GlobalConfig.WikiSpaceId);
 
             // 文档路径映射字典
             DocumentPathGenerator.GenerateDocumentPaths(wikiNodes, GlobalConfig.ExportPath);
@@ -196,178 +196,6 @@ namespace feishu_doc_export
             return paraValue;
         }
 
-        #region 获取所有的文档节点
-
-        /// <summary>
-        /// 获取空间子节点列表
-        /// </summary>
-        /// <param name="spaceId">知识空间Id</param>
-        /// <param name="pageToken">分页token，第一次查询没有</param>
-        /// <param name="parentNodeToken">父节点token</param>
-        /// <returns></returns>
-        static async Task<PagedResult<WikiNodeItemDto>> GetWikiNodeList(string spaceId, string pageToken = null, string parentNodeToken = null)
-        {
-            StringBuilder urlBuilder = new StringBuilder($"{FeiShuConsts.OpenApiEndPoint}/open-apis/wiki/v2/spaces/{spaceId}/nodes?page_size=50");// page_size=50
-            if (!string.IsNullOrWhiteSpace(pageToken))
-            {
-                urlBuilder.Append($"&page_token={pageToken}");
-            }
-
-            if (!string.IsNullOrWhiteSpace(parentNodeToken))
-            {
-                urlBuilder.Append($"&parent_node_token={parentNodeToken}");
-            }
-
-            var resultData = await feiShuHttpApi.GetWikeNodeList(urlBuilder.ToString());
-
-            return resultData.Data;
-        }
-
-        /// <summary>
-        /// 获取知识空间下全部文档节点
-        /// </summary>
-        /// <param name="spaceId"></param>
-        /// <returns></returns>
-        static async Task<List<WikiNodeItemDto>> GetAllWikiNode(string spaceId)
-        {
-            List<WikiNodeItemDto> nodes = new List<WikiNodeItemDto>();
-            string pageToken = null;
-            bool hasMore;
-            do
-            {
-                // 分页获取顶级节点，pageToken = null时为获取第一页
-                var pagedResult = await GetWikiNodeList(spaceId, pageToken);
-                nodes.AddRange(pagedResult.Items);
-
-                foreach (var item in pagedResult.Items)
-                {
-                    if (item.HasChild)
-                    {
-                        List<WikiNodeItemDto> childNodes = await GetWikiChildNode(spaceId, item.NodeToken);
-                        nodes.AddRange(childNodes);
-                    }
-                }
-
-                pageToken = pagedResult.PageToken;
-                hasMore = pagedResult.HasMore;
-
-            } while (hasMore && !string.IsNullOrWhiteSpace(pageToken));
-
-            return nodes;
-        }
-
-        /// <summary>
-        /// 递归获取知识空间下指定节点下的所有子节点（包括孙节点）
-        /// </summary>
-        /// <param name="spaceId">知识空间id</param>
-        /// <param name="parentNodeToken">父节点token</param>
-        /// <returns></returns>
-        static async Task<List<WikiNodeItemDto>> GetWikiChildNode(string spaceId, string parentNodeToken)
-        {
-            List<WikiNodeItemDto> childNodes = new List<WikiNodeItemDto>();
-            string pageToken = null;
-            bool hasMore;
-            do
-            {
-                var pagedResult = await GetWikiNodeList(spaceId, pageToken, parentNodeToken);
-                childNodes.AddRange(pagedResult.Items);
-
-                foreach (var item in pagedResult.Items)
-                {
-                    if (item.HasChild)
-                    {
-                        List<WikiNodeItemDto> grandChildNodes = await GetWikiChildNode(spaceId, item.NodeToken);
-                        childNodes.AddRange(grandChildNodes);
-                    }
-                }
-
-                pageToken = pagedResult.PageToken;
-                hasMore = pagedResult.HasMore;
-
-            } while (hasMore && !string.IsNullOrWhiteSpace(pageToken));
-
-            return childNodes;
-        }
-        #endregion
-
-        #region 导出文档
-        /// <summary>
-        /// 创建导出任务
-        /// </summary>
-        /// <param name="fileExtension">导出文件扩展名</param>
-        /// <param name="token">文档token</param>
-        /// <param name="type">导出文档类型</param>
-        /// <returns></returns>
-        static async Task<ExportOutputDto> CreateExportTask(string fileExtension, string token, string type)
-        {
-            var request = RequestData.CreateExportTask(fileExtension, token, type);
-
-            try
-            {
-                var result = await feiShuHttpApi.CreateExportTask(request);
-                return result.Data;
-            }
-            catch (HttpRequestException ex) when (ex.InnerException is ApiResponseStatusException statusException)
-            {
-                // 响应状态码异常
-                var response = statusException.ResponseMessage;
-
-                // 响应的数据
-                var responseData = await response.Content.ReadAsStringAsync();
-
-                Console.WriteLine(responseData);
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// 查询导出任务的结果
-        /// </summary>
-        /// <param name="ticket"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        static async Task<ExportTaskResultDto> QueryExportTaskResult(string ticket, string token)
-        {
-            int status;
-
-            var data = new ExportTaskResultDto();
-            do
-            {
-                var result = await feiShuHttpApi.QueryExportTask(ticket, token);
-
-                status = result.Data.Result.JobStatus;
-
-                switch (status)
-                {
-                    case 0:
-                        data = result.Data;
-                        break;
-                    case 2:
-                        await Task.Delay(300);
-                        break;
-                    default:
-                        throw new Exception($"Error: {result.Data.Result.JobErrorMsg}，ErrorCode:{status}");
-                }
-
-            } while (status != 0);
-
-            return data;
-        }
-
-        /// <summary>
-        /// 下载文档文件
-        /// </summary>
-        /// <param name="fileToken"></param>
-        /// <returns></returns>
-        static async Task<byte[]> DownLoad(string fileToken)
-        {
-            var result = await feiShuHttpApi.DownLoad(fileToken);
-
-            return result;
-        }
-
         /// <summary>
         /// 下载文档到本地
         /// </summary>
@@ -377,14 +205,14 @@ namespace feishu_doc_export
         /// <returns></returns>
         static async Task DownLoadDocument(string fileExtension, string objToken, string type)
         {
-            var exportTaskDto = await CreateExportTask(fileExtension, objToken, type);
+            var exportTaskDto = await feiShuApiCaller.CreateExportTask(fileExtension, objToken, type);
 
-            var exportTaskResult = await QueryExportTaskResult(exportTaskDto.Ticket, objToken);
+            var exportTaskResult = await feiShuApiCaller.QueryExportTaskResult(exportTaskDto.Ticket, objToken);
             var taskInfo = exportTaskResult.Result;
 
             if (taskInfo.JobErrorMsg == "success")
             {
-                var bytes = await DownLoad(taskInfo.FileToken);
+                var bytes = await feiShuApiCaller.DownLoad(taskInfo.FileToken);
 
                 var saveFileName = DocumentPathGenerator.GetDocumentPath(objToken) + "." + fileExtension;
 
@@ -398,7 +226,6 @@ namespace feishu_doc_export
                 filePath.Save(bytes);
             }
         }
-        #endregion
 
         /// <summary>
         /// 保存为Markdown文件
