@@ -265,6 +265,7 @@ namespace feishu_doc_export
                 var markdownContent = await File.ReadAllTextAsync(mdFileSavePath);
                 var replacedContent = ReplaceImagePath(markdownContent, mdFileSavePath);
                 replacedContent = ReplaceDocRefPath(replacedContent, mdFileSavePath);
+                replacedContent = ReplaceCodeToMdFormat(markdownContent);
                 await File.WriteAllTextAsync(mdFileSavePath, replacedContent);
             }
 
@@ -324,6 +325,22 @@ namespace feishu_doc_export
                 }
 
                 return match.Value;
+            });
+
+            return replacedContent;
+        }
+
+        private static string ReplaceCodeToMdFormat(string markdownContent)
+        {
+            string pattern = @"\|(?<content>[^\n]+)\n\|\s*:\s*-\s*\|";
+
+            string replacedContent = Regex.Replace(markdownContent, pattern, match =>
+            {
+                string replacement = match.Groups["content"].Value.Replace("<br>", "\n");
+
+                replacement = replacement.Remove(replacement.LastIndexOf('|'), 1);
+
+                return $"```{replacement}```";
             });
 
             return replacedContent;
