@@ -2,16 +2,11 @@
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Saving;
-using feishu_doc_export.Dtos;
 using feishu_doc_export.Helper;
 using feishu_doc_export.HttpApi;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
-using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
 using WebApiClientCore;
-using WebApiClientCore.Exceptions;
 
 namespace feishu_doc_export
 {
@@ -21,31 +16,7 @@ namespace feishu_doc_export
 
         static async Task Main(string[] args)
         {
-            GlobalConfig.InitAsposeLicense();
-
-            if (args.Length > 0)
-            {
-                GlobalConfig.AppId = GetCommandLineArg(args, "--appId=");
-                GlobalConfig.AppSecret = GetCommandLineArg(args, "--appSecret=");
-                GlobalConfig.WikiSpaceId = GetCommandLineArg(args, "--spaceId=", true);
-                GlobalConfig.DocSaveType = GetCommandLineArg(args, "--saveType=", true);
-                GlobalConfig.ExportPath = GetCommandLineArg(args, "--exportPath=");
-            }
-            else
-            {
-#if !DEBUG
-                Console.WriteLine("请输入飞书自建应用的AppId：");
-                GlobalConfig.AppId = Console.ReadLine();
-                Console.WriteLine("请输入飞书自建应用的AppSecret：");
-                GlobalConfig.AppSecret = Console.ReadLine();
-                Console.WriteLine("请输入文档导出的文件类型（可选值：docx和md，为空或其他非可选值则默认为docx）：");
-                GlobalConfig.DocSaveType = Console.ReadLine();
-                Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
-                GlobalConfig.WikiSpaceId = Console.ReadLine();
-                Console.WriteLine("请输入文档导出的目录位置：");
-                GlobalConfig.ExportPath = Console.ReadLine();
-#endif
-            }
+            GlobalConfig.Init(args);
 
             if (!Directory.Exists(GlobalConfig.ExportPath))
             {
@@ -153,52 +124,6 @@ namespace feishu_doc_export
         }
 
         /// <summary>
-        /// 获取命令行参数值
-        /// </summary>
-        /// <param name="args"></param>
-        /// <param name="parameterName"></param>
-        /// <returns></returns>
-        static string GetCommandLineArg(string[] args, string parameterName, bool canNull = false)
-        {
-            // 参数值
-            string paraValue = string.Empty;
-            // 是否有匹配的参数
-            bool found = false;
-            foreach (string arg in args)
-            {
-                if (arg.StartsWith(parameterName))
-                {
-                    paraValue = arg.Substring(parameterName.Length);
-                    found = true;
-                }
-            }
-
-            if (!canNull)
-            {
-                if (!found)
-                {
-                    Console.WriteLine($"没有找到参数：{parameterName}");
-                    Console.WriteLine("请填写以下所有参数：");
-                    Console.WriteLine("  --appId           飞书自建应用的AppId.");
-                    Console.WriteLine("  --appSecret       飞书自建应用的AppSecret.");
-                    Console.WriteLine("  --spaceId         飞书导出的知识库Id.");
-                    Console.WriteLine("  --saveType        文档导出的文件类型（可选值：docx和md，为空或其他非可选值则默认为docx）.");
-                    Console.WriteLine("  --exportPath      文档导出的目录位置.");
-                    Environment.Exit(0);
-                }
-
-                // 参数值为空
-                if (string.IsNullOrWhiteSpace(paraValue))
-                {
-                    Console.WriteLine($"参数{parameterName}不能为空");
-                    Environment.Exit(0);
-                }
-            }
-
-            return paraValue;
-        }
-
-        /// <summary>
         /// 下载文档到本地
         /// </summary>
         /// <param name="fileExtension"></param>
@@ -265,87 +190,11 @@ namespace feishu_doc_export
 
                 // 处理 Markdown 文件，替换图片和文档的引用路径为相对路径
                 var markdownContent = await File.ReadAllTextAsync(mdFileSavePath);
-                var replacedContent = ReplaceImagePath(markdownContent, mdFileSavePath);
-                replacedContent = ReplaceDocRefPath(replacedContent, mdFileSavePath);
-                replacedContent = ReplaceCodeToMdFormat(markdownContent);
+                var replacedContent = markdownContent.ReplaceImagePath(mdFileSavePath).ReplaceDocRefPath(mdFileSavePath).ReplaceCodeToMdFormat();
                 await File.WriteAllTextAsync(mdFileSavePath, replacedContent);
             }
 
         }
-
-        /// <summary>
-        /// 替换图片引用路径
-        /// </summary>
-        /// <param name="markdownContent"></param>
-        /// <param name="currentDocPath"></param>
-        /// <returns></returns>
-        private static string ReplaceImagePath(string markdownContent, string currentDocPath)
-        {
-            // 正则表达式匹配图片引用语法 ![...](...)
-            var regex = new Regex(@"!\[.*?\]\((.*?)\)", RegexOptions.IgnoreCase);
-
-            var replacedContent = regex.Replace(markdownContent, match =>
-            {
-                var imagePath = match.Groups[1].Value;
-
-                // 如果图片引用路径是绝对路径，则将其替换为相对路径
-                if (Path.IsPathRooted(imagePath))
-                {
-                    var relativePath = Path.GetRelativePath(Path.GetDirectoryName(currentDocPath), imagePath);
-                    return $"![...]({relativePath})";
-                }
-
-                return match.Value;
-            });
-
-            return replacedContent;
-        }
-
-        /// <summary>
-        /// 替换文档引用路径
-        /// </summary>
-        /// <param name="markdownContent"></param>
-        /// <returns></returns>
-        private static string ReplaceDocRefPath(string markdownContent, string currentDocPath)
-        {
-            // 正则表达式匹配飞书文档的引用语法[](https://*.feishu.cn/wiki/nodeToken)
-            var regex = new Regex(@"\[(?<linkText>[^\]]+)\]\((https?://[^/]+\.feishu\.cn/wiki/(?<nodeToken>[^)]+))\)");
-
-            var replacedContent = regex.Replace(markdownContent, match =>
-            {
-                var fileExt = Path.GetExtension(currentDocPath);
-
-                var nodeToken = match.Groups["nodeToken"].Value;
-                var linkText = match.Groups["linkText"].Value;
-
-                // 所引用的文档是否存在（如：非当前知识库的文档）
-                var refDocPath = DocumentPathGenerator.GetDocumentPathByNodeToken(nodeToken);
-                if (!string.IsNullOrWhiteSpace(refDocPath))
-                {
-                    var relativePath = Path.GetRelativePath(Path.GetDirectoryName(currentDocPath), refDocPath);
-                    return $"[{linkText}]({relativePath}{fileExt})";
-                }
-
-                return match.Value;
-            });
-
-            return replacedContent;
-        }
-
-        private static string ReplaceCodeToMdFormat(string markdownContent)
-        {
-            string pattern = @"\|(?<content>[^\n]+)\n\|\s*:\s*-\s*\|";
-
-            string replacedContent = Regex.Replace(markdownContent, pattern, match =>
-            {
-                string replacement = match.Groups["content"].Value.Replace("<br>", "\n");
-
-                replacement = replacement.Remove(replacement.LastIndexOf('|'), 1);
-
-                return $"```{replacement}```";
-            });
-
-            return replacedContent;
-        }
+        
     }
 }

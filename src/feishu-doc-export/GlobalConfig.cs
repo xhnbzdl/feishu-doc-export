@@ -1,10 +1,4 @@
 ﻿using Aspose.Words;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace feishu_doc_export
 {
@@ -42,13 +36,90 @@ namespace feishu_doc_export
             return fileExtensionDict.TryGetValue(objType, out fileExt);
         }
 
-        public static void InitAsposeLicense()
+        private static void InitAsposeLicense()
         {
             License license = new License();
             // 加载本地密钥
             license.SetLicense("C:\\Users\\User\\Desktop\\Aspose.lic");
-        }   
+        }
 
+        /// <summary>
+        /// 初始化全局配置信息
+        /// </summary>
+        /// <param name="args"></param>
+        public static void Init(string[] args)
+        {
+            if (args.Length > 0)
+            {
+                AppId = GetCommandLineArg(args, "--appId=");
+                AppSecret = GetCommandLineArg(args, "--appSecret=");
+                WikiSpaceId = GetCommandLineArg(args, "--spaceId=", true);
+                DocSaveType = GetCommandLineArg(args, "--saveType=", true);
+                ExportPath = GetCommandLineArg(args, "--exportPath=");
+            }
+            else
+            {
+#if !DEBUG
+                Console.WriteLine("请输入飞书自建应用的AppId：");
+                GlobalConfig.AppId = Console.ReadLine();
+                Console.WriteLine("请输入飞书自建应用的AppSecret：");
+                GlobalConfig.AppSecret = Console.ReadLine();
+                Console.WriteLine("请输入文档导出的文件类型（可选值：docx和md，为空或其他非可选值则默认为docx）：");
+                GlobalConfig.DocSaveType = Console.ReadLine();
+                Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
+                GlobalConfig.WikiSpaceId = Console.ReadLine();
+                Console.WriteLine("请输入文档导出的目录位置：");
+                GlobalConfig.ExportPath = Console.ReadLine();
+#endif
+            }
 
+            InitAsposeLicense();
+        }
+
+        /// <summary>
+        /// 获取命令行参数值
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="parameterName"></param>
+        /// <returns></returns>
+        public static string GetCommandLineArg(string[] args, string parameterName, bool canNull = false)
+        {
+            // 参数值
+            string paraValue = string.Empty;
+            // 是否有匹配的参数
+            bool found = false;
+            foreach (string arg in args)
+            {
+                if (arg.StartsWith(parameterName))
+                {
+                    paraValue = arg.Substring(parameterName.Length);
+                    found = true;
+                }
+            }
+
+            if (!canNull)
+            {
+                if (!found)
+                {
+                    Console.WriteLine($"没有找到参数：{parameterName}");
+                    Console.WriteLine("请填写以下所有参数：");
+                    Console.WriteLine("  --appId           飞书自建应用的AppId.");
+                    Console.WriteLine("  --appSecret       飞书自建应用的AppSecret.");
+                    Console.WriteLine("  --spaceId         飞书导出的知识库Id.");
+                    Console.WriteLine("  --saveType        文档导出的文件类型（可选值：docx和md，为空或其他非可选值则默认为docx）.");
+                    Console.WriteLine("  --exportPath      文档导出的目录位置.");
+                    Environment.Exit(0);
+                }
+
+                // 参数值为空
+                if (string.IsNullOrWhiteSpace(paraValue))
+                {
+                    Console.WriteLine($"参数{parameterName}不能为空");
+                    Environment.Exit(0);
+                }
+            }
+
+            return paraValue;
+        }
     }
 }
