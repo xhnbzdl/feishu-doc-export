@@ -20,7 +20,7 @@ namespace feishu_doc_export
 
             if (!Directory.Exists(GlobalConfig.ExportPath))
             {
-                Console.WriteLine($"指定的导出目录({GlobalConfig.ExportPath})不存在！！！");
+                LogHelper.LogError($"指定的导出目录({GlobalConfig.ExportPath})不存在！！！");
                 Environment.Exit(0);
             }
 
@@ -48,7 +48,7 @@ namespace feishu_doc_export
                 }
                 else
                 {
-                    Console.WriteLine("没有可支持导出的知识库");
+                    LogHelper.LogWarn("没有可支持导出的知识库");
                     Environment.Exit(0);
                 }
             }
@@ -87,7 +87,7 @@ namespace feishu_doc_export
                 if (!isSupport)
                 {
                     noSupportExportFiles.Add(item.Title);
-                    Console.WriteLine($"文档【{item.Title}】不支持导出，已忽略。如有需要请手动下载");
+                    LogHelper.LogWarn($"文档【{item.Title}】不支持导出，已忽略。如有需要请手动下载");
                     continue;
                 }
 

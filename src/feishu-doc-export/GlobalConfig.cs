@@ -59,18 +59,18 @@ namespace feishu_doc_export
             }
             else
             {
-#if !DEBUG
+//#if !DEBUG
                 Console.WriteLine("请输入飞书自建应用的AppId：");
-                GlobalConfig.AppId = Console.ReadLine();
+                AppId = Console.ReadLine();
                 Console.WriteLine("请输入飞书自建应用的AppSecret：");
-                GlobalConfig.AppSecret = Console.ReadLine();
+                AppSecret = Console.ReadLine();
                 Console.WriteLine("请输入文档导出的文件类型（可选值：docx和md，为空或其他非可选值则默认为docx）：");
-                GlobalConfig.DocSaveType = Console.ReadLine();
+                DocSaveType = Console.ReadLine();
                 Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
-                GlobalConfig.WikiSpaceId = Console.ReadLine();
+                WikiSpaceId = Console.ReadLine();
                 Console.WriteLine("请输入文档导出的目录位置：");
-                GlobalConfig.ExportPath = Console.ReadLine();
-#endif
+                ExportPath = Console.ReadLine();
+//#endif
             }
 
             InitAsposeLicense();
