@@ -34,9 +34,9 @@ namespace feishu_doc_export.Helper
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"【ERROR】{message}（请按任意键退出！）");
+            Console.ResetColor();
             Console.ReadKey();
             Environment.Exit(0);
-            Console.ResetColor();
         }
 
         public static void LogFatal(string message)
