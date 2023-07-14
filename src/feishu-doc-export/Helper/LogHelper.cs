@@ -12,35 +12,35 @@ namespace feishu_doc_export.Helper
         public static void LogInfo(string message)
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine(message);
+            Console.WriteLine($"【INFO】：{message}");
             Console.ResetColor();
         }
 
         public static void LogDebug(string message)
         {
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(message);
+            Console.WriteLine($"【DEBUG】：{message}");
             Console.ResetColor();
         }
 
         public static void LogWarn(string message)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine(message);
+            Console.WriteLine($"【WARN】：{message}");
             Console.ResetColor();
         }
 
         public static void LogError(string message)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(message);
+            Console.WriteLine($"【ERROR】：{message}");
             Console.ResetColor();
         }
 
         public static void LogFatal(string message)
         {
             Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine(message);
+            Console.WriteLine($"【FATAL】：{message}");
             Console.ResetColor();
         }
     }
