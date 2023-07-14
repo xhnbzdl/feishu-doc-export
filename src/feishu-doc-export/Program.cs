@@ -33,6 +33,7 @@ namespace feishu_doc_export
             }
             else
             {
+#if !DEBUG
                 Console.WriteLine("请输入飞书自建应用的AppId：");
                 GlobalConfig.AppId = Console.ReadLine();
                 Console.WriteLine("请输入飞书自建应用的AppSecret：");
@@ -43,6 +44,7 @@ namespace feishu_doc_export
                 GlobalConfig.WikiSpaceId = Console.ReadLine();
                 Console.WriteLine("请输入文档导出的目录位置：");
                 GlobalConfig.ExportPath = Console.ReadLine();
+#endif
             }
 
             if (!Directory.Exists(GlobalConfig.ExportPath))
@@ -254,7 +256,7 @@ namespace feishu_doc_export
                 // 文件保存的文件夹路径
                 var saveDirPath = Path.GetDirectoryName(fileSavePath);
                 // 设置文章中图片的存储路径
-                saveOptions.ImagesFolder = Path.Combine(saveDirPath, "../images");
+                saveOptions.ImagesFolder = Path.Combine(saveDirPath, "images");
                 // 重构文件名
                 var fileName = Path.GetFileNameWithoutExtension(fileSavePath) + ".md";
                 // 文件最终的保存路径
