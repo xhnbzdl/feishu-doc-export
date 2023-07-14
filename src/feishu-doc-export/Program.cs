@@ -21,7 +21,6 @@ namespace feishu_doc_export
             if (!Directory.Exists(GlobalConfig.ExportPath))
             {
                 LogHelper.LogError($"指定的导出目录({GlobalConfig.ExportPath})不存在！！！");
-                Environment.Exit(0);
             }
 
             IOC.Init();
@@ -48,8 +47,7 @@ namespace feishu_doc_export
                 }
                 else
                 {
-                    LogHelper.LogWarn("没有可支持导出的知识库");
-                    Environment.Exit(0);
+                    LogHelper.LogError("没有可支持导出的知识库！！！");
                 }
             }
 
@@ -118,7 +116,7 @@ namespace feishu_doc_export
             TimeSpan elapsedTime = stopwatch.Elapsed;
             // 输出执行时间（以秒为单位）
             double seconds = elapsedTime.TotalSeconds;
-            Console.WriteLine($"程序执行结束，总耗时{seconds}（秒）");
+            Console.WriteLine($"程序执行结束，总耗时{seconds}（秒）。请按任意键退出！");
 
             Console.ReadKey();
         }
