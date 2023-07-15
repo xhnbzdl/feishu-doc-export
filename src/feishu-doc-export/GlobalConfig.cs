@@ -1,4 +1,6 @@
 ﻿using Aspose.Words;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace feishu_doc_export
 {
@@ -64,7 +66,7 @@ namespace feishu_doc_export
                 AppId = Console.ReadLine();
                 Console.WriteLine("请输入飞书自建应用的AppSecret：");
                 AppSecret = Console.ReadLine();
-                Console.WriteLine("请输入文档导出的文件类型（可选值：docx和md，为空或其他非可选值则默认为docx）：");
+                Console.WriteLine("请输入文档导出的文件类型（可选值：docx、md、pdf，为空或其他非可选值则默认为docx）：");
                 DocSaveType = Console.ReadLine();
                 Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
                 WikiSpaceId = Console.ReadLine();
@@ -106,7 +108,7 @@ namespace feishu_doc_export
                     Console.WriteLine("  --appId           飞书自建应用的AppId.");
                     Console.WriteLine("  --appSecret       飞书自建应用的AppSecret.");
                     Console.WriteLine("  --spaceId         飞书导出的知识库Id.");
-                    Console.WriteLine("  --saveType        文档导出的文件类型（可选值：docx和md，为空或其他非可选值则默认为docx）.");
+                    Console.WriteLine("  --saveType        文档导出的文件类型（可选值：docx、md、pdf，为空或其他非可选值则默认为docx）.");
                     Console.WriteLine("  --exportPath      文档导出的目录位置.");
                     Environment.Exit(0);
                 }
