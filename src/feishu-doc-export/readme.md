@@ -5,19 +5,19 @@
 - win
 
   ```
-  dotnet publish --no-restore -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true 
+  dotnet publish --no-restore -c Release -r win-x64 -o dist/win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true 
   ```
 
 - mac
 
   ```
-  dotnet publish --no-restore -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
+  dotnet publish --no-restore -c Release -r osx-x64 -o dist/osx-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
   ```
 
 - linux
 
   ```
-  dotnet publish --no-restore -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
+  dotnet publish --no-restore -c Release -r linux-x64 -o dist/linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true
   ```
 
 ### 

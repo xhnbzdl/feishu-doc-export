@@ -1,55 +1,35 @@
 ﻿
-using feishu_doc_export.Dtos;
+using Aspose.Words;
+using Aspose.Words.Drawing;
+using Aspose.Words.Saving;
 using feishu_doc_export.Helper;
 using feishu_doc_export.HttpApi;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
-using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
 using WebApiClientCore;
-using WebApiClientCore.Exceptions;
 
 namespace feishu_doc_export
 {
     internal class Program
     {
-        static IFeiShuHttpApi feiShuHttpApi;
+        static IFeiShuHttpApiCaller feiShuApiCaller;
 
         static async Task Main(string[] args)
         {
-            if (args.Length > 0)
-            {
-                GlobalConfig.AppId = GetCommandLineArg(args, "--appId=");
-                GlobalConfig.AppSecret = GetCommandLineArg(args, "--appSecret=");
-                GlobalConfig.WikiSpaceId = GetCommandLineArg(args, "--spaceId=", true);
-                GlobalConfig.ExportPath = GetCommandLineArg(args, "--exportPath=");
-            }
-            else
-            {
-                Console.WriteLine("请输入飞书自建应用的AppId：");
-                GlobalConfig.AppId = Console.ReadLine();
-                Console.WriteLine("请输入飞书自建应用的AppSecret：");
-                GlobalConfig.AppSecret = Console.ReadLine();
-                Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
-                GlobalConfig.WikiSpaceId = Console.ReadLine();
-                Console.WriteLine("请输入文档导出的目录位置：");
-                GlobalConfig.ExportPath = Console.ReadLine();
-            }
+            GlobalConfig.Init(args);
 
             if (!Directory.Exists(GlobalConfig.ExportPath))
             {
-                Console.WriteLine($"指定的导出目录({GlobalConfig.ExportPath})不存在！！！");
-                Environment.Exit(0);
+                LogHelper.LogError($"指定的导出目录({GlobalConfig.ExportPath})不存在！！！");
             }
 
             IOC.Init();
-            feiShuHttpApi = IOC.IoContainer.GetService<IFeiShuHttpApi>();
+            feiShuApiCaller = IOC.IoContainer.GetService<IFeiShuHttpApiCaller>();
 
             if (string.IsNullOrWhiteSpace(GlobalConfig.WikiSpaceId))
             {
-                var wikiSpaces = await feiShuHttpApi.GetWikiSpaces();
-                var wikiSpaceDict = wikiSpaces.Data.Items
+                var wikiSpaces = await feiShuApiCaller.GetWikiSpaces();
+                var wikiSpaceDict = wikiSpaces.Items
                     .Select((x, i) => new { Index = i + 1, WikiSpace = x })
                     .ToDictionary(x => x.Index, x => x.WikiSpace);
 
@@ -67,12 +47,11 @@ namespace feishu_doc_export
                 }
                 else
                 {
-                    Console.WriteLine("没有可支持导出的知识库");
-                    Environment.Exit(0);
-                }   
+                    LogHelper.LogError("没有可支持导出的知识库！！！");
+                }
             }
 
-            var wikiSpaceInfo = (await feiShuHttpApi.GetWikiSpaceInfo(GlobalConfig.WikiSpaceId)).Data;
+            var wikiSpaceInfo = await feiShuApiCaller.GetWikiSpaceInfo(GlobalConfig.WikiSpaceId);
 
             Console.WriteLine($"正在加载知识库【{wikiSpaceInfo.Space.Name}】的所有文档信息，请耐心等待...");
 
@@ -80,7 +59,7 @@ namespace feishu_doc_export
             stopwatch.Start();
 
             // 获取知识库下的所有文档
-            var wikiNodes = await GetAllWikiNode(GlobalConfig.WikiSpaceId);
+            var wikiNodes = await feiShuApiCaller.GetAllWikiNode(GlobalConfig.WikiSpaceId);
 
             // 文档路径映射字典
             DocumentPathGenerator.GenerateDocumentPaths(wikiNodes, GlobalConfig.ExportPath);
@@ -94,12 +73,26 @@ namespace feishu_doc_export
             {
 
                 var isSupport = GlobalConfig.GetFileExtension(item.ObjType, out string fileExt);
+
                 // 如果该文件类型不支持导出
                 if (!isSupport)
                 {
                     noSupportExportFiles.Add(item.Title);
-                    Console.WriteLine($"文档【{item.Title}】不支持导出，已忽略。如有需要请手动下载");
+                    LogHelper.LogWarn($"文档【{item.Title}】不支持导出，已忽略。如有需要请手动下载");
                     continue;
+                }
+
+                if (GlobalConfig.DocSaveType == "pdf")
+                {
+                    fileExt = "pdf";
+                }
+
+                // 用于展示的文件后缀名称
+                var showFileExt = fileExt;
+
+                if (fileExt == "docx" && GlobalConfig.DocSaveType == "md")
+                {
+                    showFileExt = GlobalConfig.DocSaveType;
                 }
 
                 // 文件名超出长度限制，不支持导出
@@ -111,7 +104,7 @@ namespace feishu_doc_export
                     continue;
                 }
 
-                Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}.{fileExt}】");
+                Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}.{showFileExt}】");
 
                 await DownLoadDocument(fileExt, item.ObjToken, item.ObjType);
             }
@@ -129,226 +122,9 @@ namespace feishu_doc_export
             TimeSpan elapsedTime = stopwatch.Elapsed;
             // 输出执行时间（以秒为单位）
             double seconds = elapsedTime.TotalSeconds;
-            Console.WriteLine($"程序执行结束，总耗时{seconds}（秒）");
+            Console.WriteLine($"程序执行结束，总耗时{seconds}（秒）。请按任意键退出！");
 
             Console.ReadKey();
-        }
-
-        /// <summary>
-        /// 获取命令行参数值
-        /// </summary>
-        /// <param name="args"></param>
-        /// <param name="parameterName"></param>
-        /// <returns></returns>
-        static string GetCommandLineArg(string[] args, string parameterName, bool canNull = false)
-        {
-            // 参数值
-            string paraValue = string.Empty;
-            // 是否有匹配的参数
-            bool found = false;
-            foreach (string arg in args)
-            {
-                if (arg.StartsWith(parameterName))
-                {
-                    paraValue = arg.Substring(parameterName.Length);
-                    found = true;
-                }
-            }
-
-            if (!canNull)
-            {
-                if (!found)
-                {
-                    Console.WriteLine($"没有找到参数：{parameterName}.");
-                    Console.WriteLine("请填写以下所有参数：");
-                    Console.WriteLine("  --appId           飞书自建应用的AppId.");
-                    Console.WriteLine("  --appSecret       飞书自建应用的AppSecret.");
-                    Console.WriteLine("  --spaceId         飞书导出的知识库Id.");
-                    Console.WriteLine("  --exportPath      文档导出的目录位置.");
-                    Environment.Exit(0);
-                }
-
-                // 参数值为空
-                if (string.IsNullOrWhiteSpace(paraValue))
-                {
-                    Console.WriteLine($"参数{parameterName}不能为空");
-                    Environment.Exit(0);
-                }
-            }
-
-            return paraValue;
-        }
-
-        #region 获取所有的文档节点
-
-        /// <summary>
-        /// 获取空间子节点列表
-        /// </summary>
-        /// <param name="spaceId">知识空间Id</param>
-        /// <param name="pageToken">分页token，第一次查询没有</param>
-        /// <param name="parentNodeToken">父节点token</param>
-        /// <returns></returns>
-        static async Task<PagedResult<WikiNodeItemDto>> GetWikiNodeList(string spaceId, string pageToken = null, string parentNodeToken = null)
-        {
-            StringBuilder urlBuilder = new StringBuilder($"{FeiShuConsts.OpenApiEndPoint}/open-apis/wiki/v2/spaces/{spaceId}/nodes?page_size=50");// page_size=50
-            if (!string.IsNullOrWhiteSpace(pageToken))
-            {
-                urlBuilder.Append($"&page_token={pageToken}");
-            }
-
-            if (!string.IsNullOrWhiteSpace(parentNodeToken))
-            {
-                urlBuilder.Append($"&parent_node_token={parentNodeToken}");
-            }
-
-            var resultData = await feiShuHttpApi.GetWikeNodeList(urlBuilder.ToString());
-
-            return resultData.Data;
-        }
-
-        /// <summary>
-        /// 获取知识空间下全部文档节点
-        /// </summary>
-        /// <param name="spaceId"></param>
-        /// <returns></returns>
-        static async Task<List<WikiNodeItemDto>> GetAllWikiNode(string spaceId)
-        {
-            List<WikiNodeItemDto> nodes = new List<WikiNodeItemDto>();
-            string pageToken = null;
-            bool hasMore;
-            do
-            {
-                // 分页获取顶级节点，pageToken = null时为获取第一页
-                var pagedResult = await GetWikiNodeList(spaceId, pageToken);
-                nodes.AddRange(pagedResult.Items);
-
-                foreach (var item in pagedResult.Items)
-                {
-                    if (item.HasChild)
-                    {
-                        List<WikiNodeItemDto> childNodes = await GetWikiChildNode(spaceId, item.NodeToken);
-                        nodes.AddRange(childNodes);
-                    }
-                }
-
-                pageToken = pagedResult.PageToken;
-                hasMore = pagedResult.HasMore;
-
-            } while (hasMore && !string.IsNullOrWhiteSpace(pageToken));
-
-            return nodes;
-        }
-
-        /// <summary>
-        /// 递归获取知识空间下指定节点下的所有子节点（包括孙节点）
-        /// </summary>
-        /// <param name="spaceId">知识空间id</param>
-        /// <param name="parentNodeToken">父节点token</param>
-        /// <returns></returns>
-        static async Task<List<WikiNodeItemDto>> GetWikiChildNode(string spaceId, string parentNodeToken)
-        {
-            List<WikiNodeItemDto> childNodes = new List<WikiNodeItemDto>();
-            string pageToken = null;
-            bool hasMore;
-            do
-            {
-                var pagedResult = await GetWikiNodeList(spaceId, pageToken, parentNodeToken);
-                childNodes.AddRange(pagedResult.Items);
-
-                foreach (var item in pagedResult.Items)
-                {
-                    if (item.HasChild)
-                    {
-                        List<WikiNodeItemDto> grandChildNodes = await GetWikiChildNode(spaceId, item.NodeToken);
-                        childNodes.AddRange(grandChildNodes);
-                    }
-                }
-
-                pageToken = pagedResult.PageToken;
-                hasMore = pagedResult.HasMore;
-
-            } while (hasMore && !string.IsNullOrWhiteSpace(pageToken));
-
-            return childNodes;
-        }
-        #endregion
-
-        #region 导出文档
-        /// <summary>
-        /// 创建导出任务
-        /// </summary>
-        /// <param name="fileExtension">导出文件扩展名</param>
-        /// <param name="token">文档token</param>
-        /// <param name="type">导出文档类型</param>
-        /// <returns></returns>
-        static async Task<ExportOutputDto> CreateExportTask(string fileExtension, string token, string type)
-        {
-            var request = RequestData.CreateExportTask(fileExtension, token, type);
-
-            try
-            {
-                var result = await feiShuHttpApi.CreateExportTask(request);
-                return result.Data;
-            }
-            catch (HttpRequestException ex) when (ex.InnerException is ApiResponseStatusException statusException)
-            {
-                // 响应状态码异常
-                var response = statusException.ResponseMessage;
-
-                // 响应的数据
-                var responseData = await response.Content.ReadAsStringAsync();
-
-                Console.WriteLine(responseData);
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// 查询导出任务的结果
-        /// </summary>
-        /// <param name="ticket"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        static async Task<ExportTaskResultDto> QueryExportTaskResult(string ticket, string token)
-        {
-            int status;
-
-            var data = new ExportTaskResultDto();
-            do
-            {
-                var result = await feiShuHttpApi.QueryExportTask(ticket, token);
-
-                status = result.Data.Result.JobStatus;
-
-                switch (status)
-                {
-                    case 0:
-                        data = result.Data;
-                        break;
-                    case 2:
-                        await Task.Delay(300);
-                        break;
-                    default:
-                        throw new Exception($"Error: {result.Data.Result.JobErrorMsg}，ErrorCode:{status}");
-                }
-
-            } while (status != 0);
-
-            return data;
-        }
-
-        /// <summary>
-        /// 下载文档文件
-        /// </summary>
-        /// <param name="fileToken"></param>
-        /// <returns></returns>
-        static async Task<byte[]> DownLoad(string fileToken)
-        {
-            var result = await feiShuHttpApi.DownLoad(fileToken);
-
-            return result;
         }
 
         /// <summary>
@@ -360,23 +136,70 @@ namespace feishu_doc_export
         /// <returns></returns>
         static async Task DownLoadDocument(string fileExtension, string objToken, string type)
         {
-            var exportTaskDto = await CreateExportTask(fileExtension, objToken, type);
+            var exportTaskDto = await feiShuApiCaller.CreateExportTask(fileExtension, objToken, type);
 
-            var exportTaskResult = await QueryExportTaskResult(exportTaskDto.Ticket, objToken);
+            var exportTaskResult = await feiShuApiCaller.QueryExportTaskResult(exportTaskDto.Ticket, objToken);
             var taskInfo = exportTaskResult.Result;
 
             if (taskInfo.JobErrorMsg == "success")
             {
-                var bytes = await DownLoad(taskInfo.FileToken);
+                var bytes = await feiShuApiCaller.DownLoad(taskInfo.FileToken);
 
                 var saveFileName = DocumentPathGenerator.GetDocumentPath(objToken) + "." + fileExtension;
 
                 var filePath = Path.Combine(GlobalConfig.ExportPath, saveFileName);
 
-                filePath.Save(bytes);
+                if (fileExtension == "docx" && GlobalConfig.DocSaveType == "md")
+                {
+                    await SaveToMarkdownFile(bytes, filePath);
+                    return;
+                }
+
+                await filePath.Save(bytes);
             }
         }
-        #endregion
 
+        /// <summary>
+        /// 保存为Markdown文件
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="fileSavePath"></param>
+        static async Task SaveToMarkdownFile(byte[] bytes,string fileSavePath)
+        {
+            using (MemoryStream stream = new MemoryStream(bytes))
+            {
+                // 加载 Word 文档
+                Document doc = new Document(stream);
+
+                // 遍历文档中的所有形状（包括图片）
+                foreach (Shape shape in doc.GetChildNodes(NodeType.Shape, true))
+                {
+                    if (shape.HasImage)
+                    {
+                        // 清空图片描述
+                        shape.AlternativeText = "";
+                    }
+                }
+
+                // 创建Markdown保存选项
+                MarkdownSaveOptions saveOptions = new MarkdownSaveOptions();
+                // 文件保存的文件夹路径
+                var saveDirPath = Path.GetDirectoryName(fileSavePath);
+                // 设置文章中图片的存储路径
+                saveOptions.ImagesFolder = Path.Combine(saveDirPath, "images");
+                // 重构文件名
+                var fileName = Path.GetFileNameWithoutExtension(fileSavePath) + ".md";
+                // 文件最终的保存路径
+                var mdFileSavePath = Path.Combine(saveDirPath, fileName);
+                doc.Save(mdFileSavePath, saveOptions);
+
+                // 处理 Markdown 文件，替换图片和文档的引用路径为相对路径
+                var markdownContent = await File.ReadAllTextAsync(mdFileSavePath);
+                var replacedContent = markdownContent.ReplaceImagePath(mdFileSavePath).ReplaceDocRefPath(mdFileSavePath).ReplaceCodeToMdFormat();
+                await File.WriteAllTextAsync(mdFileSavePath, replacedContent);
+            }
+
+        }
+        
     }
 }

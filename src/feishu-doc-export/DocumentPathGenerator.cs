@@ -10,11 +10,19 @@ namespace feishu_doc_export
 {
     public static class DocumentPathGenerator
     {
+        /// <summary>
+        /// 文档objToken和路径的映射
+        /// </summary>
         private static Dictionary<string, string> documentPaths;
+        /// <summary>
+        /// 文档nodeToken和路径的映射
+        /// </summary>
+        private static Dictionary<string, string> documentPaths2;
 
         public static void GenerateDocumentPaths(List<WikiNodeItemDto> documents, string rootFolderPath)
         {
             documentPaths = new Dictionary<string, string>();
+            documentPaths2 = new Dictionary<string, string>();
 
             var topDocument = documents.Where(x => string.IsNullOrWhiteSpace(x.ParentNodeToken));
             foreach (var document in topDocument)
@@ -31,6 +39,7 @@ namespace feishu_doc_export
             string documentFolderPath = Path.Combine(parentFolderPath, title);
 
             documentPaths[document.ObjToken] = documentFolderPath;
+            documentPaths2[document.NodeToken] = documentFolderPath;
 
             foreach (var childDocument in GetChildDocuments(document, documents))
             {
@@ -43,9 +52,25 @@ namespace feishu_doc_export
             return documents.Where(d => d.ParentNodeToken == document.NodeToken);
         }
 
+        /// <summary>
+        /// 获取文档的存储路径
+        /// </summary>
+        /// <param name="objToken"></param>
+        /// <returns></returns>
         public static string GetDocumentPath(string objToken)
         {
             documentPaths.TryGetValue(objToken, out string path);
+            return path;
+        }
+
+        /// <summary>
+        /// 获取文档的存储路径
+        /// </summary>
+        /// <param name="objToken"></param>
+        /// <returns></returns>
+        public static string GetDocumentPathByNodeToken(string nodeToken)
+        {
+            documentPaths2.TryGetValue(nodeToken, out string path);
             return path;
         }
     }

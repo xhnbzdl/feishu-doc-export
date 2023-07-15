@@ -13,13 +13,27 @@ namespace feishu_doc_export.Helper
         /// </summary>
         /// <param name="path"></param>
         /// <param name="content"></param>
-        public static void Save(this string path, byte[] content)
+        public static Task Save(this string path, byte[] content)
         {
             var dir = Path.GetDirectoryName(path);
 
             dir.CreateIfNotExist();
 
-            File.WriteAllBytes(path, content);
+            return File.WriteAllBytesAsync(path, content);
+        }
+
+        /// <summary>
+        /// 保存文件
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="content"></param>
+        public static Task Save(this string path, string content)
+        {
+            var dir = Path.GetDirectoryName(path);
+
+            dir.CreateIfNotExist();
+
+            return File.WriteAllTextAsync(path, content);
         }
 
         /// <summary>
