@@ -73,13 +73,6 @@ namespace feishu_doc_export
             {
 
                 var isSupport = GlobalConfig.GetFileExtension(item.ObjType, out string fileExt);
-                // 用于展示的文件后缀名称
-                var showFileExt = fileExt;
-
-                if (fileExt == "docx" && GlobalConfig.DocSaveType == "md")
-                {
-                    showFileExt = GlobalConfig.DocSaveType;
-                }
 
                 // 如果该文件类型不支持导出
                 if (!isSupport)
@@ -87,6 +80,19 @@ namespace feishu_doc_export
                     noSupportExportFiles.Add(item.Title);
                     LogHelper.LogWarn($"文档【{item.Title}】不支持导出，已忽略。如有需要请手动下载");
                     continue;
+                }
+
+                if (GlobalConfig.DocSaveType == "pdf")
+                {
+                    fileExt = "pdf";
+                }
+
+                // 用于展示的文件后缀名称
+                var showFileExt = fileExt;
+
+                if (fileExt == "docx" && GlobalConfig.DocSaveType == "md")
+                {
+                    showFileExt = GlobalConfig.DocSaveType;
                 }
 
                 // 文件名超出长度限制，不支持导出
@@ -148,6 +154,7 @@ namespace feishu_doc_export
                     await SaveToMarkdownFile(bytes, filePath);
                     return;
                 }
+
                 await filePath.Save(bytes);
             }
         }
