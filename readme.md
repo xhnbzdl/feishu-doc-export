@@ -1,5 +1,5 @@
 # feishu-doc-export
-一个支持Windows、Mac、Linux系统的飞书文档一键导出服务，仅需一行命令即可将飞书知识库的全部文档同步到本地电脑。导出速度嘎嘎快，实测700多个文档导出只需25分钟，且程序是后台挂机运行，不影响正常工作。
+一个支持Windows、Mac、Linux系统的飞书文档一键导出服务，仅需一行命令即可将飞书知识库的全部文档同步到本地电脑。导出速度嘎嘎快，实测**700**多个文档导出只需**25**分钟，且程序是后台挂机运行，不影响正常工作。2023-7-15更新了`v0.0.3`版本（支持导出`markdown`，`docx`，`pdf`三种格式），最新版本内容，请查看文章最后的更新日志。
 ## 动机
 
 最近也是公司办公软件从飞书切换回了企业微信，自然就产生了一些文档要迁移的问题，由于文档量过多（大概有700多个），无论是从飞书手动下载为Word或PDF格式的文档，还是将内容复制到本地新建Markdown文件都是一件极为繁琐的事情。于是便找到了两个GitHub上已有的飞书文档导出工具`Feishu2MD`和`feishu-backup`，但是他们都有一些问题不太满足我的需求。
@@ -141,3 +141,43 @@
 - 不支持单独导出某个子节点下的所有文档
 
 所以呢，目前我写的这个程序只适用于不要求将文档导出为`Markdown`的群体使用。
+## 更新日志
+
+### 2023-7-15发布[feishu-doc-export-v 0.0.3 ](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.3)
+
+- 这个版本新增了两种格式的导出，可支持将飞书文档导出为`markdown`和`pdf`，加上原有支持的`docx`一共是三种格式。
+
+- 新增了命令行参数`--saveType`，文档保存的格式类型，可选值有`md`，`pdf`，`docx`，如果参数不传，或值为空，或值为不存在的格式，则默认导出为`docx`。使用方式如下：
+
+  ```shell
+  # win 不指定知识库 将文档保存为markdown文档
+  ./feishu-doc-export.exe --appId=xxx --appSecret=xxx --saveType=md --exportPath=E:\temp\test
+  
+  # mac 不指定知识库 将文档保存为pdf
+  sudo ./feishu-doc-export --appId=xxx --appSecret=xxx  --exportPath=/home/feishu-document --saveType=pdf
+  
+  # linux 不指定知识库 将文档保存为docx
+  sudo ./feishu-doc-export --appId=xxx --appSecret=xxx  --exportPath=/home/feishu-document 
+  sudo ./feishu-doc-export --appId=xxx --appSecret=xxx  --exportPath=/home/feishu-document --saveType=
+  sudo ./feishu-doc-export --appId=xxx --appSecret=xxx  --exportPath=/home/feishu-document --saveType=docx
+  sudo ./feishu-doc-export --appId=xxx --appSecret=xxx  --exportPath=/home/feishu-document --saveType=abcdefg
+  ```
+
+- 耗时测试
+
+  - 导出为`docx`最快
+  - 导出为`markdown`和`docx`的速度差不多
+  - 导出为`pdf`速度最慢，因为`pdf`的图片是内嵌的
+  - 实际速度与网速和飞书服务器响应，电脑磁盘写入速度都有关系
+
+- 注意事项：
+
+  1. 文档导出为`markdown`时，存在文档格式丢失的问题，原因是因为我的实现方式是利用飞书自提供的接口先将文档下载为`docx`，然后再将`docx`转为`markdown`，文档下载为`docx`后就已经存在格式丢失的问题了，所以不能很好的转换为`markdown`。而上面提到的两个开源库都是自己做的处理，它们都是直接将飞书原始数据转换为`markdown`语法的。`feishu-backup`是作者自己对飞书原始数据做的转换（牛逼），`feishu2md`则是用了一个针对飞书数据转换的库。
+
+  2. `feishu-doc-export`目前已发现`docx`转为`markdown`丢失的格式有：引用语法、表格、行内代码块
+
+  3. 对于飞书文档中引用的其他文档，如果引用的文档是当前知识库的文档，则该文档下载到本地后会以相对路径引用另一个文档，因为另一个文档也会下载到本地。
+
+     如果引用的文档是其他知识库或者是外链，则当前文档下载后还是以原文方式引用。
+
+- 导出的效果图展示，由于图片大小原因请移步[效果图查看链接](https://www.cnblogs.com/hyx1229/p/17533325.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97)
