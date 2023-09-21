@@ -6,15 +6,25 @@ namespace feishu_doc_export
 {
     public static class GlobalConfig
     {
-        public static string AppId { get; set; }
+        public static string AppId { get; set; } 
 
-        public static string AppSecret { get; set; }
+        public static string AppSecret { get; set; } 
 
         public static string ExportPath { get; set; }
 
         public static string WikiSpaceId { get; set; }
 
-        public static string DocSaveType { get; set; }
+        private static string _docSaveType = "pdf";
+
+        public static string DocSaveType { 
+            get { return _docSaveType; }
+            set
+            {
+                var options = new string[] { "pdf", "docx", "md" };
+
+                _docSaveType = options.Contains(value) ? value : "docx";
+            } 
+        }
 
         /// <summary>
         /// 飞书支持导出的文件类型和导出格式

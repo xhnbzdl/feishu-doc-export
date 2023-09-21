@@ -82,15 +82,10 @@ namespace feishu_doc_export
                     continue;
                 }
 
-                if (GlobalConfig.DocSaveType == "pdf")
-                {
-                    fileExt = "pdf";
-                }
-
                 // 用于展示的文件后缀名称
                 var showFileExt = fileExt;
 
-                if (fileExt == "docx" && GlobalConfig.DocSaveType == "md")
+                if (fileExt == "docx")
                 {
                     showFileExt = GlobalConfig.DocSaveType;
                 }
