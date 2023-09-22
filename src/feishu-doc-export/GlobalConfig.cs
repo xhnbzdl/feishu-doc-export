@@ -6,15 +6,15 @@ namespace feishu_doc_export
 {
     public static class GlobalConfig
     {
-        public static string AppId { get; set; } 
+        public static string AppId { get; set; }
 
-        public static string AppSecret { get; set; } 
+        public static string AppSecret { get; set; }
 
         public static string ExportPath { get; set; }
 
         public static string WikiSpaceId { get; set; }
 
-        private static string _docSaveType = "pdf";
+        private static string _docSaveType = "docx";
 
         public static string DocSaveType { 
             get { return _docSaveType; }
@@ -35,6 +35,7 @@ namespace feishu_doc_export
             {"docx","docx" },
             {"sheet","xlsx" },
             {"bitable","xlsx" },
+            {"file","file" },
         };
 
         /// <summary>

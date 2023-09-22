@@ -78,5 +78,14 @@ namespace feishu_doc_export.HttpApi
         [HttpGet("/open-apis/drive/v1/export_tasks/file/{fileToken}/download")]
         [OAuthToken]
         Task<byte[]> DownLoad(string fileToken);
+
+        /// <summary>
+        /// 下载文件
+        /// </summary>
+        /// <param name="fileToken"></param>
+        /// <returns></returns>
+        [HttpGet("/open-apis/drive/v1/files/{fileToken}/download")]
+        [OAuthToken]
+        Task<byte[]> DownLoadFile(string fileToken);
     }
 }

@@ -82,12 +82,38 @@ namespace feishu_doc_export
                     continue;
                 }
 
+                // 文档为文件类型则直接下载文件
+                if (fileExt == "file")
+                {
+                    try
+                    {
+                        Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}】");
+
+                        await DownLoadFile(item.ObjToken);
+
+                        continue;
+                    }
+                    catch (Exception ex)
+                    {
+                        noSupportExportFiles.Add(item.Title);
+                        LogHelper.LogWarn($"下载文档【{item.Title}】时出现未知异常，已忽略。请手动下载。异常信息：{ex.Message}");
+                    }
+                }
+
                 // 用于展示的文件后缀名称
                 var showFileExt = fileExt;
+                // 用于指定文件下载类型
+                var fileExtension = fileExt;
 
+                // 只有当飞书文档类型为docx时才支持使用自定义文档保存类型
                 if (fileExt == "docx")
                 {
                     showFileExt = GlobalConfig.DocSaveType;
+
+                    if (GlobalConfig.DocSaveType == "pdf")
+                    {
+                        fileExtension = GlobalConfig.DocSaveType;
+                    }
                 }
 
                 // 文件名超出长度限制，不支持导出
@@ -103,7 +129,7 @@ namespace feishu_doc_export
 
                 try
                 {
-                    await DownLoadDocument(fileExt, item.ObjToken, item.ObjType);
+                    await DownLoadDocument(fileExtension, item.ObjToken, item.ObjType);
                 }
                 catch (HttpRequestException ex)
                 {
@@ -142,8 +168,8 @@ namespace feishu_doc_export
         /// <summary>
         /// 下载文档到本地
         /// </summary>
-        /// <param name="fileExtension"></param>
-        /// <param name="token"></param>
+        /// <param name="fileExtension">文档导出的文件类型（docx）</param>
+        /// <param name="objToken"></param>
         /// <param name="type"></param>
         /// <returns></returns>
         static async Task DownLoadDocument(string fileExtension, string objToken, string type)
@@ -174,6 +200,22 @@ namespace feishu_doc_export
 
                 await filePath.Save(bytes);
             }
+        }
+
+        /// <summary>
+        /// 下载文件到本地
+        /// </summary>
+        /// <param name="objToken"></param>
+        /// <returns></returns>
+        static async Task DownLoadFile(string objToken)
+        {
+            var bytes = await feiShuApiCaller.DownLoadFile(objToken);
+
+            var saveFileName = DocumentPathGenerator.GetDocumentPath(objToken);
+
+            var filePath = Path.Combine(GlobalConfig.ExportPath, saveFileName);
+
+            await filePath.Save(bytes);
         }
 
         /// <summary>

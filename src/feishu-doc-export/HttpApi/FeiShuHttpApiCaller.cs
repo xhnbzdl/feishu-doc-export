@@ -75,6 +75,12 @@ namespace feishu_doc_export.HttpApi
         /// <param name="spaceId"></param>
         /// <returns></returns>
         Task<WikiSpaceInfo> GetWikiSpaceInfo(string spaceId);
+        /// <summary>
+        /// 下载文件
+        /// </summary>
+        /// <param name="fileToken"></param>
+        /// <returns></returns>
+        Task<byte[]> DownLoadFile(string fileToken);
     }
     public class FeiShuHttpApiCaller : IFeiShuHttpApiCaller
     {
@@ -261,6 +267,21 @@ namespace feishu_doc_export.HttpApi
                 var res = await _feiShuHttpApi.GetWikiSpaceInfo(spaceId);
 
                 return res.Data;
+            }
+            catch (HttpRequestException ex)
+            {
+                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<byte[]> DownLoadFile(string fileToken)
+        {
+            try
+            {
+                var result = await _feiShuHttpApi.DownLoadFile(fileToken);
+
+                return result;
             }
             catch (HttpRequestException ex)
             {
