@@ -1,8 +1,9 @@
 # feishu-doc-export
-一个支持Windows、Mac、Linux系统的飞书文档一键导出服务，仅需一行命令即可将飞书知识库的全部文档同步到本地电脑。导出速度嘎嘎快，实测**700**多个文档导出只需**25**分钟，且程序是后台挂机运行，不影响正常工作。2023-7-15更新了`v0.0.3`版本（支持导出`markdown`，`docx`，`pdf`三种格式），最新版本内容，请查看文章最后的**更新日志**。
+一个支持Windows、Mac、Linux系统的飞书文档一键导出服务，仅需一行命令即可将飞书知识库的全部文档同步到本地电脑。支持导出`markdown`，`docx`，`pdf`三种格式。导出速度嘎嘎快，实测**700**多个文档导出只需**25**分钟，且程序是后台挂机运行，不影响正常工作。最新版本内容，请查看文章最后的**更新日志**
+
 ## 动机
 
-最近也是公司办公软件从飞书切换回了企业微信，自然就产生了一些文档要迁移的问题，由于文档量过多（大概有700多个），无论是从飞书手动下载为Word或PDF格式的文档，还是将内容复制到本地新建Markdown文件都是一件极为繁琐的事情。于是便找到了两个GitHub上已有的飞书文档导出工具`Feishu2MD`和`feishu-backup`，但是他们都有一些问题不太满足我的需求。
+最近也是公司办公软件从飞书切换回了企业微信，自然就产生了一些文档要迁移的问题，由于文档量过多（大概有700多个），无论是从飞书手动下载为`Word`或`PDF`格式的文档，还是将内容复制到本地新建`Markdown`文件都是一件极为繁琐的事情。于是便找到了两个GitHub上已有的飞书文档导出工具`Feishu2MD`和`feishu-backup`，但是他们都有一些问题不太满足我的需求。
 
 ### 现有方案的不满足
 
@@ -58,7 +59,7 @@
 
 ### 下载程序
 
-> [v0.0.2.1](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.2.1)版本为第一个正式发布版本，从`v0.0.2.1`往后迭代的每一个版本都将提供免安装的可执行程序。下载地址：[（Releases）feishu-doc-export](https://github.com/xhnbzdl/feishu-doc-export/releases)
+> 下载地址：[（Releases）feishu-doc-export](https://github.com/xhnbzdl/feishu-doc-export/releases)，请选择最新版本下载
 
 - windows-x64系统，下载`feishu-doc-export-win-x64.zip`
 
@@ -181,3 +182,9 @@
      如果引用的文档是其他知识库或者是外链，则当前文档下载后还是以原文方式引用。
 
 - 导出的效果图展示，由于图片大小原因请移步[效果图查看链接](https://www.cnblogs.com/hyx1229/p/17533325.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97)
+
+### 2023-9-22发布[feishu-doc-export-v 0.0.4 ](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.4)
+
+- 支持下载知识库中的文件，如：`pdf`、图片等
+- 优化程序异常情况，保证下载过程中不中断
+
