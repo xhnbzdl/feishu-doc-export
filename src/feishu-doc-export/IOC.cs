@@ -40,7 +40,7 @@ namespace feishu_doc_export
         }
 
         /// <summary>
-        /// 添加RabbitMq服务注册
+        /// 添加服务注册
         /// </summary>
         /// <param name="services"></param>
         public static IServiceCollection ConfigService(this IServiceCollection services)

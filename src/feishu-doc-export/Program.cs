@@ -95,13 +95,30 @@ namespace feishu_doc_export
                 {
                     var left64FileName = item.Title.PadLeft(61) + $"···.{fileExt}";
                     noSupportExportFiles.Add($"(文件名超长){left64FileName}");
-                    Console.WriteLine($"文档【{left64FileName}】的文件命名长度超出Windows文件命名的长度限制，已忽略");
+                    Console.WriteLine($"文档【{left64FileName}】的文件命名长度超出系统文件命名的长度限制，已忽略");
                     continue;
                 }
 
                 Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}.{showFileExt}】");
 
-                await DownLoadDocument(fileExt, item.ObjToken, item.ObjType);
+                try
+                {
+                    await DownLoadDocument(fileExt, item.ObjToken, item.ObjType);
+                }
+                catch (HttpRequestException ex)
+                {
+                    LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                }
+                catch (CustomException ex)
+                {
+                    noSupportExportFiles.Add(item.Title);
+                    LogHelper.LogWarn($"文档【{item.Title}】{ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    noSupportExportFiles.Add(item.Title);
+                    LogHelper.LogWarn($"下载文档【{item.Title}】时出现未知异常，已忽略。请手动下载。异常信息：{ex.Message}");
+                }
             }
 
             Console.WriteLine("—————————————————————————————文档已全部导出—————————————————————————————");
@@ -132,6 +149,11 @@ namespace feishu_doc_export
         static async Task DownLoadDocument(string fileExtension, string objToken, string type)
         {
             var exportTaskDto = await feiShuApiCaller.CreateExportTask(fileExtension, objToken, type);
+
+            if (exportTaskDto == null)
+            {
+                return;
+            }
 
             var exportTaskResult = await feiShuApiCaller.QueryExportTaskResult(exportTaskDto.Ticket, objToken);
             var taskInfo = exportTaskResult.Result;

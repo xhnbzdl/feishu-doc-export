@@ -1,9 +1,12 @@
 ﻿using feishu_doc_export.Dtos;
 using feishu_doc_export.Helper;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using WebApiClientCore.Exceptions;
 
@@ -105,30 +108,39 @@ namespace feishu_doc_export.HttpApi
 
         public async Task<List<WikiNodeItemDto>> GetAllWikiNode(string spaceId)
         {
-            List<WikiNodeItemDto> nodes = new List<WikiNodeItemDto>();
-            string pageToken = null;
-            bool hasMore;
-            do
+            try
             {
-                // 分页获取顶级节点，pageToken = null时为获取第一页
-                var pagedResult = await GetWikiNodeList(spaceId, pageToken);
-                nodes.AddRange(pagedResult.Items);
-
-                foreach (var item in pagedResult.Items)
+                List<WikiNodeItemDto> nodes = new List<WikiNodeItemDto>();
+                string pageToken = null;
+                bool hasMore;
+                do
                 {
-                    if (item.HasChild)
+                    // 分页获取顶级节点，pageToken = null时为获取第一页
+                    var pagedResult = await GetWikiNodeList(spaceId, pageToken);
+                    nodes.AddRange(pagedResult.Items);
+
+                    foreach (var item in pagedResult.Items)
                     {
-                        List<WikiNodeItemDto> childNodes = await GetWikiChildNode(spaceId, item.NodeToken);
-                        nodes.AddRange(childNodes);
+                        if (item.HasChild)
+                        {
+                            List<WikiNodeItemDto> childNodes = await GetWikiChildNode(spaceId, item.NodeToken);
+                            nodes.AddRange(childNodes);
+                        }
                     }
-                }
 
-                pageToken = pagedResult.PageToken;
-                hasMore = pagedResult.HasMore;
+                    pageToken = pagedResult.PageToken;
+                    hasMore = pagedResult.HasMore;
 
-            } while (hasMore && !string.IsNullOrWhiteSpace(pageToken));
+                } while (hasMore && !string.IsNullOrWhiteSpace(pageToken));
 
-            return nodes;
+                return nodes;
+
+            }
+            catch (HttpRequestException ex)
+            {
+                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                throw;
+            }
         }
 
         public async Task<List<WikiNodeItemDto>> GetWikiChildNode(string spaceId, string parentNodeToken)
@@ -179,7 +191,11 @@ namespace feishu_doc_export.HttpApi
                 // 响应的数据
                 var responseData = await response.Content.ReadAsStringAsync();
 
-                Console.WriteLine(responseData);
+                if (responseData.Contains("1069902"))
+                {
+                    string message = $"无阅读或导出权限，已忽略。飞书服务端响应数据为：{responseData}";
+                    throw new CustomException(message, 1069902);
+                }
             }
 
             return null;
@@ -201,7 +217,7 @@ namespace feishu_doc_export.HttpApi
                     case 0:
                         data = result.Data;
                         break;
-                    case 1: 
+                    case 1:
                     case 2:
                         await Task.Delay(300);
                         break;
@@ -225,16 +241,32 @@ namespace feishu_doc_export.HttpApi
 
         public async Task<PagedResult<WikiSpaceDto>> GetWikiSpaces()
         {
-            var res = await _feiShuHttpApi.GetWikiSpaces();
+            try
+            {
+                var res = await _feiShuHttpApi.GetWikiSpaces();
 
-            return res.Data;
+                return res.Data;
+            }
+            catch (HttpRequestException ex)
+            {
+                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                throw;
+            }
         }
 
         public async Task<WikiSpaceInfo> GetWikiSpaceInfo(string spaceId)
         {
-            var res = await _feiShuHttpApi.GetWikiSpaceInfo(spaceId);
+            try
+            {
+                var res = await _feiShuHttpApi.GetWikiSpaceInfo(spaceId);
 
-            return res.Data;
+                return res.Data;
+            }
+            catch (HttpRequestException ex)
+            {
+                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                throw;
+            }
         }
     }
 }
