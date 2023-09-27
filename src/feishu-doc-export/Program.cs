@@ -20,7 +20,7 @@ namespace feishu_doc_export
 
             if (!Directory.Exists(GlobalConfig.ExportPath))
             {
-                LogHelper.LogError($"指定的导出目录({GlobalConfig.ExportPath})不存在！！！");
+                LogHelper.LogWarnExit($"指定的导出目录({GlobalConfig.ExportPath})不存在！！！");
             }
 
             IOC.Init();
@@ -36,7 +36,7 @@ namespace feishu_doc_export
 
                 if (string.IsNullOrWhiteSpace(GlobalConfig.CloudDocFolder))
                 {
-                    LogHelper.LogError("导出对象为个人空间云文档时，请填写【folderToken】参数");
+                    LogHelper.LogWarnExit("导出对象为个人空间云文档时，请填写【folderToken】参数");
                 }
 
                 var folderMeta = await feiShuApiCaller.GetFolderMeta(GlobalConfig.CloudDocFolder);
@@ -158,7 +158,7 @@ namespace feishu_doc_export
                     }
                     else
                     {
-                        LogHelper.LogError("没有可支持导出的知识库！！！");
+                        LogHelper.LogWarnExit("没有可支持导出的知识库！！！");
                     }
                 }
 
