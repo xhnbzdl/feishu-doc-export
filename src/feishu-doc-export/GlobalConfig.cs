@@ -1,4 +1,5 @@
 ﻿using Aspose.Words;
+using feishu_doc_export.Helper;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -81,25 +82,45 @@ namespace feishu_doc_export
 //#if !DEBUG
                 Console.WriteLine("请输入飞书自建应用的AppId：");
                 AppId = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(AppId))
+                {
+                    LogHelper.LogWarnExit("AppId是必填参数");
+                }
+
                 Console.WriteLine("请输入飞书自建应用的AppSecret：");
                 AppSecret = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(AppSecret))
+                {
+                    LogHelper.LogWarnExit("AppSecret是必填参数");
+                }
+
                 Console.WriteLine("请输入文档导出的文件类型（可选值：docx、md、pdf，为空或其他非可选值则默认为docx）：");
                 DocSaveType = Console.ReadLine();
+
                 Console.WriteLine("请选择云文档类型（可选值：wiki、cloudDoc）");
                 Type = Console.ReadLine();
                 if (Type == "cloudDoc")
                 {
                     Console.WriteLine("请输入云文档文件夹Token（必填项！）");
                     CloudDocFolder = Console.ReadLine();
+                    if (string.IsNullOrWhiteSpace(CloudDocFolder))
+                    {
+                        LogHelper.LogWarnExit("文件夹Token是必填参数");
+                    }
                 }
                 else
                 {
                     Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
                     WikiSpaceId = Console.ReadLine();
                 }
+
                 Console.WriteLine("请输入文档导出的目录位置：");
                 ExportPath = Console.ReadLine();
-//#endif
+                if (string.IsNullOrWhiteSpace(ExportPath))
+                {
+                    LogHelper.LogWarnExit("文档导出的目录是必填参数");
+                }
+                //#endif
             }
 
             InitAsposeLicense();
