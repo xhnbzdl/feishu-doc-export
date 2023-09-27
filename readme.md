@@ -78,18 +78,25 @@
   --appSecret       飞书自建应用的AppSecret.
   --spaceId         飞书导出的知识库Id（可为空，或者不传此参数）.
   --exportPath      文档导出的目录位置.
+  --type            知识库（wiki）或个人空间云文档（cloudDoc）（可选值：cloudDoc、wiki，为空则默认为wiki）.
+  --saveType        文档导出的文件类型（可选值：docx、md、pdf，为空或其他非可选值则默认为docx）.
+  --folderToken     当type为个人空间云文档时，该项必填.
 ```
 
 - win环境
 
   ```powershell
   # 指定知识库导出
-  ./feishu-doc-export.exe --appId=111111 --appSecret=2222222  --spaceId=333333 --exportPath=E:\temp\测试飞书文档
+  ./feishu-doc-export.exe --appId=111111 --appSecret=2222222  --spaceId=333333 --exportPath=E:\temp\test
   # 不指定知识库导出
-  ./feishu-doc-export.exe --appId=111111 --appSecret=222222 --exportPath=E:\temp\测试飞书文档
+  ./feishu-doc-export.exe --appId=111111 --appSecret=222222 --exportPath=E:\temp\test
+  # win 不指定知识库 将文档保存为markdown文档
+  ./feishu-doc-export.exe --appId=xxx --appSecret=xxx --saveType=md --exportPath=E:\temp\test
+  # win 导出个人空间文档 将文档保存为markdown文档
+  ./feishu-doc-export.exe --appId=xxx --appSecret=xxx --saveType=md --exportPath=E:\temp\test --type=cloudDoc --folderToken=xxx
   ```
 
-- linux环境和mac环境
+- Linux环境和mac环境
 
   **注意！！！**首次使用时需要将文件授权为可执行文件
 
@@ -127,21 +134,16 @@
 
    ![feishu_wiki](https://github.com/xhnbzdl/feishu-doc-export/assets/84184815/ddc6f0c0-3ace-4498-8bc4-02effc5ee5ea)
 
+## 个人空间文档导出
+
+操作步骤，请参考**更新日志**[feishu-doc-export-v 0.0.4 ](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.4)
+
 ## 耗时测试
 
 **700**多个文件导出到本地总耗时**25分钟**
 
 ![image](https://github.com/xhnbzdl/feishu-doc-export/assets/84184815/77c97483-8c32-4de0-97d8-a0ef9211cab8)
 
-## 总结
-
-自己动手，丰衣足食，有趣且实用。不过目前我的方案不支持的功能有以下几点，以后有空了再增强
-
-- 不支持将文档导出为`Markdown`格式
-- 不支持单独导出一个文档
-- 不支持单独导出某个子节点下的所有文档
-
-所以呢，目前我写的这个程序只适用于不要求将文档导出为`Markdown`的群体使用。
 ## 更新日志
 
 ### 2023-7-15发布[feishu-doc-export-v 0.0.3 ](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.3)
@@ -183,8 +185,37 @@
 
 - 导出的效果图展示，由于图片大小原因请移步[效果图查看链接](https://www.cnblogs.com/hyx1229/p/17533325.html#%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97)
 
-### 2023-9-22发布[feishu-doc-export-v 0.0.4 ](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.4)
+### 2023-9-27发布[feishu-doc-export-v 0.0.4 ](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.4)
 
-- 支持下载知识库中的文件，如：`pdf`、图片等
-- 优化程序异常情况，保证下载过程中不中断
+- 支持导出知识库内的文件类型文档，如：pdf、image等。
 
+- 支持个人空间云文档导出（需要指定文件夹的Token）
+
+- 优化了程序异常处理，保证下载尽可能不中断
+
+- 新增了命令行参数`--type`和`--folderToken`，选择导出知识库或个人空间云文档，可选值：`cloudDoc`、`wiki`，为空则默认为`wiki`。当`type=cloudDoc`时，需要填写`--folderToken`参数，`type=wiki`或空，则不需要填写。使用方式如下：
+
+  ```powershell
+  # win 导出个人空间文档 将文档保存为markdown文档
+  ./feishu-doc-export.exe --appId=xxx --appSecret=xxx --saveType=md --exportPath=E:\temp\test --type=cloudDoc --folderToken=xxx
+  ```
+
+- 如何导出个人空间的文档
+
+  1. 将要导出的文件夹分享给自建应用，让自建应用拥有可导出文档的权限。
+
+    ![image-20230927162804954](https://github.com/xhnbzdl/feishu-doc-export/assets/84184815/668c5d5a-9b6e-4410-9511-a5027167eb6b)
+
+  2. 获取`folderToken`：
+
+  
+   ![image-20230927161804968](https://github.com/xhnbzdl/feishu-doc-export/assets/84184815/b094b108-7ff4-4b2f-860a-b5b8298b1e15)
+
+
+  3. 执行命令：
+
+     ![image-20230927163239528](https://github.com/xhnbzdl/feishu-doc-export/assets/84184815/1d049f23-ad39-4260-a8fe-e4214b87c953)
+
+- 为什么不支持列举文件夹列表？
+
+  因为飞书对于个人空间做了登录限制，未登录情况下个人空间相关的部分`API`无法直接调用。而要支持登录，飞书只提供了网页端的接入方案，因此该项目不支持。
