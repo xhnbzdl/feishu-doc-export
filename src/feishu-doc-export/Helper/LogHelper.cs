@@ -30,6 +30,15 @@ namespace feishu_doc_export.Helper
             Console.ResetColor();
         }
 
+        public static void LogWarnExit(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"【WARN】{message} （请按任意键退出！）");
+            Console.ResetColor();
+            Console.ReadKey();
+            Environment.Exit(0);
+        }
+
         public static void LogError(string message)
         {
             Console.ForegroundColor = ConsoleColor.Red;

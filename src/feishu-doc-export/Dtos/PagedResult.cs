@@ -11,6 +11,8 @@ namespace feishu_doc_export.Dtos
     {
         public List<T> Items { get; set; }
 
+        public List<T> Files { get; set; }
+
         [JsonPropertyName("page_token")]
         public string PageToken { get; set; }
 

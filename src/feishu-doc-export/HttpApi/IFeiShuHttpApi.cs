@@ -50,6 +50,21 @@ namespace feishu_doc_export.HttpApi
         Task<ResponseData<PagedResult<WikiNodeItemDto>>> GetWikeNodeList([Uri] string url);
 
         /// <summary>
+        /// 获取个人空间指定文件夹下的文档列表
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [OAuthToken]
+        [JsonReturn]
+        Task<ResponseData<PagedResult<CloudDocDto>>> GetCloudDocList([Uri] string url);
+
+        [HttpGet("/open-apis/drive/explorer/v2/folder/{folderToken}/meta")]
+        [OAuthToken]
+        [JsonReturn]
+        Task<ResponseData<CloudDocFolderMeta>> GetFolderMeta(string folderToken);
+
+        /// <summary>
         /// 创建文档导出任务结果
         /// </summary>
         /// <param name="request"></param>
