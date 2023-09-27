@@ -14,6 +14,7 @@ namespace feishu_doc_export.HttpApi
 {
     public interface IFeiShuHttpApiCaller
     {
+        #region 知识空间Wiki
         /// <summary>
         /// 获取空间子节点列表
         /// </summary>
@@ -38,6 +39,21 @@ namespace feishu_doc_export.HttpApi
         /// <returns></returns>
         Task<List<WikiNodeItemDto>> GetWikiChildNode(string spaceId, string parentNodeToken);
 
+        /// <summary>
+        /// 获取所有的知识库
+        /// </summary>
+        /// <returns></returns>
+        Task<PagedResult<WikiSpaceDto>> GetWikiSpaces();
+
+        /// <summary>
+        /// 获取知识库详细信息
+        /// </summary>
+        /// <param name="spaceId"></param>
+        /// <returns></returns>
+        Task<WikiSpaceInfo> GetWikiSpaceInfo(string spaceId);
+        #endregion
+
+        #region 下载文档
         /// <summary>
         /// 创建导出任务
         /// </summary>
@@ -64,23 +80,42 @@ namespace feishu_doc_export.HttpApi
         Task<byte[]> DownLoad(string fileToken);
 
         /// <summary>
-        /// 获取所有的知识库
-        /// </summary>
-        /// <returns></returns>
-        Task<PagedResult<WikiSpaceDto>> GetWikiSpaces();
-
-        /// <summary>
-        /// 获取知识库详细信息
-        /// </summary>
-        /// <param name="spaceId"></param>
-        /// <returns></returns>
-        Task<WikiSpaceInfo> GetWikiSpaceInfo(string spaceId);
-        /// <summary>
         /// 下载文件
         /// </summary>
         /// <param name="fileToken"></param>
         /// <returns></returns>
         Task<byte[]> DownLoadFile(string fileToken);
+        #endregion
+
+        #region 个人空间云文档
+        /// <summary>
+        /// 获取文件夹信息
+        /// </summary>
+        /// <param name="folderToken"></param>
+        /// <returns></returns>
+        Task<CloudDocFolderMeta> GetFolderMeta(string folderToken);
+        /// <summary>
+        /// 获取个人空间云文档
+        /// </summary>
+        /// <param name="folderToken"></param>
+        /// <param name="pageToken"></param>
+        /// <returns></returns>
+        Task<PagedResult<CloudDocDto>> GetCloudDocList(string folderToken = null, string pageToken = null);
+
+        /// <summary>
+        /// 获取个人空间云文档指定文件夹下的所有文档
+        /// </summary>
+        /// <param name="folderToken"></param>
+        /// <returns></returns>
+        Task<List<CloudDocDto>> GetFolderAllCloudDoc(string folderToken);
+
+        /// <summary>
+        /// 递归获取子文档
+        /// </summary>
+        /// <param name="parentNodeToken"></param>
+        /// <returns></returns>
+        Task<List<CloudDocDto>> GetChildCloudDoc(string parentNodeToken);
+        #endregion
     }
     public class FeiShuHttpApiCaller : IFeiShuHttpApiCaller
     {
@@ -91,8 +126,7 @@ namespace feishu_doc_export.HttpApi
             _feiShuHttpApi = feiShuHttpApi;
         }
 
-
-        #region 获取所有的文档节点
+        #region 获取知识库所有的文档节点
 
         public async Task<PagedResult<WikiNodeItemDto>> GetWikiNodeList(string spaceId, string pageToken = null, string parentNodeToken = null)
         {
@@ -179,6 +213,20 @@ namespace feishu_doc_export.HttpApi
         #endregion
 
         #region 导出文档
+        public async Task<byte[]> DownLoadFile(string fileToken)
+        {
+            try
+            {
+                var result = await _feiShuHttpApi.DownLoadFile(fileToken);
+
+                return result;
+            }
+            catch (HttpRequestException ex)
+            {
+                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                throw;
+            }
+        }
 
         public async Task<ExportOutputDto> CreateExportTask(string fileExtension, string token, string type)
         {
@@ -245,6 +293,7 @@ namespace feishu_doc_export.HttpApi
 
         #endregion
 
+        #region 知识库
         public async Task<PagedResult<WikiSpaceDto>> GetWikiSpaces()
         {
             try
@@ -274,14 +323,16 @@ namespace feishu_doc_export.HttpApi
                 throw;
             }
         }
+        #endregion
 
-        public async Task<byte[]> DownLoadFile(string fileToken)
+        #region 个人空间云文档
+        public async Task<CloudDocFolderMeta> GetFolderMeta(string folderToken)
         {
             try
             {
-                var result = await _feiShuHttpApi.DownLoadFile(fileToken);
+                var res = await _feiShuHttpApi.GetFolderMeta(folderToken);
 
-                return result;
+                return res.Data;
             }
             catch (HttpRequestException ex)
             {
@@ -289,5 +340,85 @@ namespace feishu_doc_export.HttpApi
                 throw;
             }
         }
+
+        public async Task<PagedResult<CloudDocDto>> GetCloudDocList(string folderToken = null, string pageToken = null)
+        {
+            StringBuilder urlBuilder = new StringBuilder($"{FeiShuConsts.OpenApiEndPoint}/open-apis/drive/v1/files?folder_token={folderToken}&page_size=50");// page_size=50
+            if (!string.IsNullOrWhiteSpace(pageToken))
+            {
+                urlBuilder.Append($"&page_token={pageToken}");
+            }
+
+            var resultData = await _feiShuHttpApi.GetCloudDocList(urlBuilder.ToString());
+
+            return resultData.Data;
+        }
+
+        public async Task<List<CloudDocDto>> GetFolderAllCloudDoc(string folderToken)
+        {
+            try
+            {
+                List<CloudDocDto> nodes = new List<CloudDocDto>();
+                string pageToken = null;
+                bool hasMore;
+                do
+                {
+                    // 分页获取顶级节点，pageToken = null时为获取第一页
+                    var pagedResult = await GetCloudDocList(folderToken, pageToken);
+                    nodes.AddRange(pagedResult.Files);
+
+                    foreach (var item in pagedResult.Files)
+                    {
+                        if (item.Type == "folder")
+                        {
+                            List<CloudDocDto> childNodes = await GetChildCloudDoc(item.Token);
+                            nodes.AddRange(childNodes);
+                        }
+                    }
+
+                    pageToken = pagedResult.PageToken;
+                    hasMore = pagedResult.HasMore;
+
+                } while (hasMore && !string.IsNullOrWhiteSpace(pageToken));
+
+                return nodes;
+
+            }
+            catch (HttpRequestException ex)
+            {
+                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<List<CloudDocDto>> GetChildCloudDoc(string parentNodeToken)
+        {
+            List<CloudDocDto> childNodes = new List<CloudDocDto>();
+            string pageToken = null;
+            bool hasMore;
+            do
+            {
+                var pagedResult = await GetCloudDocList(parentNodeToken, pageToken);
+                childNodes.AddRange(pagedResult.Files);
+
+                foreach (var item in pagedResult.Files)
+                {
+                    if (item.Type == "folder")
+                    {
+                        List<CloudDocDto> grandChildNodes = await GetChildCloudDoc(item.Token);
+                        childNodes.AddRange(grandChildNodes);
+                    }
+                }
+
+                pageToken = pagedResult.PageToken;
+                hasMore = pagedResult.HasMore;
+
+            } while (hasMore && !string.IsNullOrWhiteSpace(pageToken));
+
+            return childNodes;
+        }
+
+        #endregion
+
     }
 }
