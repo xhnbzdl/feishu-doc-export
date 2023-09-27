@@ -26,72 +26,226 @@ namespace feishu_doc_export
             IOC.Init();
             feiShuApiCaller = IOC.IoContainer.GetService<IFeiShuHttpApiCaller>();
 
-            if (string.IsNullOrWhiteSpace(GlobalConfig.WikiSpaceId))
-            {
-                var wikiSpaces = await feiShuApiCaller.GetWikiSpaces();
-                var wikiSpaceDict = wikiSpaces.Items
-                    .Select((x, i) => new { Index = i + 1, WikiSpace = x })
-                    .ToDictionary(x => x.Index, x => x.WikiSpace);
-
-                if (wikiSpaceDict.Any())
-                {
-                    Console.WriteLine($"以下是所有支持导出的知识库：");
-
-                    foreach (var item in wikiSpaceDict)
-                    {
-                        Console.WriteLine($"【{item.Key}.】{item.Value.Name}");
-                    }
-                    Console.WriteLine("请选择知识库（输入知识库的序号）：");
-                    var index = int.Parse(Console.ReadLine());
-                    GlobalConfig.WikiSpaceId = wikiSpaceDict[index].Spaceid;
-                }
-                else
-                {
-                    LogHelper.LogError("没有可支持导出的知识库！！！");
-                }
-            }
-
-            var wikiSpaceInfo = await feiShuApiCaller.GetWikiSpaceInfo(GlobalConfig.WikiSpaceId);
-
-            Console.WriteLine($"正在加载知识库【{wikiSpaceInfo.Space.Name}】的所有文档信息，请耐心等待...");
-
             Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            // 获取知识库下的所有文档
-            var wikiNodes = await feiShuApiCaller.GetAllWikiNode(GlobalConfig.WikiSpaceId);
-
-            // 文档路径映射字典
-            DocumentPathGenerator.GenerateDocumentPaths(wikiNodes, GlobalConfig.ExportPath);
 
             // 不支持导出的文件
             List<string> noSupportExportFiles = new List<string>();
 
-            // 记录导出的文档数量
-            int count = 1;
-            foreach (var item in wikiNodes)
+            if (GlobalConfig.Type == "cloudDoc")
             {
 
-                var isSupport = GlobalConfig.GetFileExtension(item.ObjType, out string fileExt);
-
-                // 如果该文件类型不支持导出
-                if (!isSupport)
+                if (string.IsNullOrWhiteSpace(GlobalConfig.CloudDocFolder))
                 {
-                    noSupportExportFiles.Add(item.Title);
-                    LogHelper.LogWarn($"文档【{item.Title}】不支持导出，已忽略。如有需要请手动下载");
-                    continue;
+                    LogHelper.LogError("导出对象为个人空间云文档时，请填写【folderToken】参数");
                 }
 
-                // 文档为文件类型则直接下载文件
-                if (fileExt == "file")
+                var folderMeta = await feiShuApiCaller.GetFolderMeta(GlobalConfig.CloudDocFolder);
+
+                Console.WriteLine($"正在加载个人空间云文档【{folderMeta.Name}】文件夹下的所有文档信息，请耐心等待...");
+
+                stopwatch.Start();
+
+                // 获取个人空间下的所有文档
+                var selfDocs = await feiShuApiCaller.GetFolderAllCloudDoc(GlobalConfig.CloudDocFolder);
+
+                // 文档路径映射字典
+                CloudDocPathGenerator.GenerateDocumentPaths(selfDocs, GlobalConfig.ExportPath);
+
+                // 记录导出的文档数量
+                int count = 1;
+                foreach (var item in selfDocs)
                 {
+                    if (item.Type == "folder")
+                    {
+                        continue;
+                    }
+
+                    var isSupport = GlobalConfig.GetFileExtension(item.Type, out string fileExt);
+
+                    // 如果该文件类型不支持导出
+                    if (!isSupport)
+                    {
+                        noSupportExportFiles.Add(item.Name);
+                        LogHelper.LogWarn($"文档【{item.Name}】不支持导出，已忽略。如有需要请手动下载");
+                        continue;
+                    }
+
+                    // 文档为文件类型则直接下载文件
+                    if (fileExt == "file")
+                    {
+                        try
+                        {
+                            Console.WriteLine($"正在导出文档————————{count++}.【{item.Name}】");
+
+                            await DownLoadFile(item.Token);
+
+                            continue;
+                        }
+                        catch (Exception ex)
+                        {
+                            noSupportExportFiles.Add(item.Name);
+                            LogHelper.LogWarn($"下载文档【{item.Name}】时出现未知异常，已忽略。请手动下载。异常信息：{ex.Message}");
+                        }
+                    }
+
+                    // 用于展示的文件后缀名称
+                    var showFileExt = fileExt;
+                    // 用于指定文件下载类型
+                    var fileExtension = fileExt;
+
+                    // 只有当飞书文档类型为docx时才支持使用自定义文档保存类型
+                    if (fileExt == "docx")
+                    {
+                        showFileExt = GlobalConfig.DocSaveType;
+
+                        if (GlobalConfig.DocSaveType == "pdf")
+                        {
+                            fileExtension = GlobalConfig.DocSaveType;
+                        }
+                    }
+
+                    // 文件名超出长度限制，不支持导出
+                    if (item.Name.Length > 64)
+                    {
+                        var left64FileName = item.Name.PadLeft(61) + $"···.{fileExt}";
+                        noSupportExportFiles.Add($"(文件名超长){left64FileName}");
+                        Console.WriteLine($"文档【{left64FileName}】的文件命名长度超出系统文件命名的长度限制，已忽略");
+                        continue;
+                    }
+
+                    Console.WriteLine($"正在导出文档————————{count++}.【{item.Name}.{showFileExt}】");
+
                     try
                     {
-                        Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}】");
+                        await DownLoadDocument(fileExtension, item.Token, item.Type);
+                    }
+                    catch (HttpRequestException ex)
+                    {
+                        LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                    }
+                    catch (CustomException ex)
+                    {
+                        noSupportExportFiles.Add(item.Name);
+                        LogHelper.LogWarn($"文档【{item.Name}】{ex.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        noSupportExportFiles.Add(item.Name);
+                        LogHelper.LogWarn($"下载文档【{item.Name}】时出现未知异常，已忽略。请手动下载。异常信息：{ex.Message}");
+                    }
+                }
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(GlobalConfig.WikiSpaceId))
+                {
+                    var wikiSpaces = await feiShuApiCaller.GetWikiSpaces();
+                    var wikiSpaceDict = wikiSpaces.Items
+                        .Select((x, i) => new { Index = i + 1, WikiSpace = x })
+                        .ToDictionary(x => x.Index, x => x.WikiSpace);
 
-                        await DownLoadFile(item.ObjToken);
+                    if (wikiSpaceDict.Any())
+                    {
+                        Console.WriteLine($"以下是所有支持导出的知识库：");
 
+                        foreach (var item in wikiSpaceDict)
+                        {
+                            Console.WriteLine($"【{item.Key}.】{item.Value.Name}");
+                        }
+                        Console.WriteLine("请选择知识库（输入知识库的序号）：");
+                        var index = int.Parse(Console.ReadLine());
+                        GlobalConfig.WikiSpaceId = wikiSpaceDict[index].Spaceid;
+                    }
+                    else
+                    {
+                        LogHelper.LogError("没有可支持导出的知识库！！！");
+                    }
+                }
+
+                var wikiSpaceInfo = await feiShuApiCaller.GetWikiSpaceInfo(GlobalConfig.WikiSpaceId);
+
+                Console.WriteLine($"正在加载知识库【{wikiSpaceInfo.Space.Name}】的所有文档信息，请耐心等待...");
+
+                stopwatch.Start();
+
+                // 获取知识库下的所有文档
+                var wikiNodes = await feiShuApiCaller.GetAllWikiNode(GlobalConfig.WikiSpaceId);
+
+                // 文档路径映射字典
+                DocumentPathGenerator.GenerateDocumentPaths(wikiNodes, GlobalConfig.ExportPath);
+
+                // 记录导出的文档数量
+                int count = 1;
+                foreach (var item in wikiNodes)
+                {
+
+                    var isSupport = GlobalConfig.GetFileExtension(item.ObjType, out string fileExt);
+
+                    // 如果该文件类型不支持导出
+                    if (!isSupport)
+                    {
+                        noSupportExportFiles.Add(item.Title);
+                        LogHelper.LogWarn($"文档【{item.Title}】不支持导出，已忽略。如有需要请手动下载");
                         continue;
+                    }
+
+                    // 文档为文件类型则直接下载文件
+                    if (fileExt == "file")
+                    {
+                        try
+                        {
+                            Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}】");
+
+                            await DownLoadFile(item.ObjToken);
+
+                            continue;
+                        }
+                        catch (Exception ex)
+                        {
+                            noSupportExportFiles.Add(item.Title);
+                            LogHelper.LogWarn($"下载文档【{item.Title}】时出现未知异常，已忽略。请手动下载。异常信息：{ex.Message}");
+                        }
+                    }
+
+                    // 用于展示的文件后缀名称
+                    var showFileExt = fileExt;
+                    // 用于指定文件下载类型
+                    var fileExtension = fileExt;
+
+                    // 只有当飞书文档类型为docx时才支持使用自定义文档保存类型
+                    if (fileExt == "docx")
+                    {
+                        showFileExt = GlobalConfig.DocSaveType;
+
+                        if (GlobalConfig.DocSaveType == "pdf")
+                        {
+                            fileExtension = GlobalConfig.DocSaveType;
+                        }
+                    }
+
+                    // 文件名超出长度限制，不支持导出
+                    if (item.Title.Length > 64)
+                    {
+                        var left64FileName = item.Title.PadLeft(61) + $"···.{fileExt}";
+                        noSupportExportFiles.Add($"(文件名超长){left64FileName}");
+                        Console.WriteLine($"文档【{left64FileName}】的文件命名长度超出系统文件命名的长度限制，已忽略");
+                        continue;
+                    }
+
+                    Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}.{showFileExt}】");
+
+                    try
+                    {
+                        await DownLoadDocument(fileExtension, item.ObjToken, item.ObjType);
+                    }
+                    catch (HttpRequestException ex)
+                    {
+                        LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                    }
+                    catch (CustomException ex)
+                    {
+                        noSupportExportFiles.Add(item.Title);
+                        LogHelper.LogWarn($"文档【{item.Title}】{ex.Message}");
                     }
                     catch (Exception ex)
                     {
@@ -99,53 +253,9 @@ namespace feishu_doc_export
                         LogHelper.LogWarn($"下载文档【{item.Title}】时出现未知异常，已忽略。请手动下载。异常信息：{ex.Message}");
                     }
                 }
-
-                // 用于展示的文件后缀名称
-                var showFileExt = fileExt;
-                // 用于指定文件下载类型
-                var fileExtension = fileExt;
-
-                // 只有当飞书文档类型为docx时才支持使用自定义文档保存类型
-                if (fileExt == "docx")
-                {
-                    showFileExt = GlobalConfig.DocSaveType;
-
-                    if (GlobalConfig.DocSaveType == "pdf")
-                    {
-                        fileExtension = GlobalConfig.DocSaveType;
-                    }
-                }
-
-                // 文件名超出长度限制，不支持导出
-                if (item.Title.Length > 64)
-                {
-                    var left64FileName = item.Title.PadLeft(61) + $"···.{fileExt}";
-                    noSupportExportFiles.Add($"(文件名超长){left64FileName}");
-                    Console.WriteLine($"文档【{left64FileName}】的文件命名长度超出系统文件命名的长度限制，已忽略");
-                    continue;
-                }
-
-                Console.WriteLine($"正在导出文档————————{count++}.【{item.Title}.{showFileExt}】");
-
-                try
-                {
-                    await DownLoadDocument(fileExtension, item.ObjToken, item.ObjType);
-                }
-                catch (HttpRequestException ex)
-                {
-                    LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
-                }
-                catch (CustomException ex)
-                {
-                    noSupportExportFiles.Add(item.Title);
-                    LogHelper.LogWarn($"文档【{item.Title}】{ex.Message}");
-                }
-                catch (Exception ex)
-                {
-                    noSupportExportFiles.Add(item.Title);
-                    LogHelper.LogWarn($"下载文档【{item.Title}】时出现未知异常，已忽略。请手动下载。异常信息：{ex.Message}");
-                }
             }
+
+            
 
             Console.WriteLine("—————————————————————————————文档已全部导出—————————————————————————————");
             Console.WriteLine(noSupportExportFiles.Any() ? "以下是所有不支持导出的文档" : "");
@@ -188,9 +298,15 @@ namespace feishu_doc_export
             {
                 var bytes = await feiShuApiCaller.DownLoad(taskInfo.FileToken);
 
-                var saveFileName = DocumentPathGenerator.GetDocumentPath(objToken) + "." + fileExtension;
-
-                var filePath = Path.Combine(GlobalConfig.ExportPath, saveFileName);
+                string filePath = string.Empty;
+                if (GlobalConfig.Type == "cloudDoc")
+                {
+                    filePath = CloudDocPathGenerator.GetDocumentPath(objToken) + "." + fileExtension;
+                }
+                else
+                {
+                    filePath = DocumentPathGenerator.GetDocumentPath(objToken) + "." + fileExtension;
+                }
 
                 if (fileExtension == "docx" && GlobalConfig.DocSaveType == "md")
                 {
@@ -211,9 +327,7 @@ namespace feishu_doc_export
         {
             var bytes = await feiShuApiCaller.DownLoadFile(objToken);
 
-            var saveFileName = DocumentPathGenerator.GetDocumentPath(objToken);
-
-            var filePath = Path.Combine(GlobalConfig.ExportPath, saveFileName);
+            string filePath = GlobalConfig.Type == "cloudDoc" ? CloudDocPathGenerator.GetDocumentPath(objToken) : DocumentPathGenerator.GetDocumentPath(objToken);
 
             await filePath.Save(bytes);
         }

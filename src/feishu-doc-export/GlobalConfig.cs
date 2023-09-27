@@ -6,13 +6,17 @@ namespace feishu_doc_export
 {
     public static class GlobalConfig
     {
-        public static string AppId { get; set; }
+        public static string AppId { get; set; } 
 
-        public static string AppSecret { get; set; }
+        public static string AppSecret { get; set; } 
 
-        public static string ExportPath { get; set; }
+        public static string ExportPath { get; set; } 
 
         public static string WikiSpaceId { get; set; }
+
+        public static string CloudDocFolder { get; set; } 
+
+        public static string Type { get; set; } = "wiki";
 
         private static string _docSaveType = "docx";
 
@@ -66,6 +70,8 @@ namespace feishu_doc_export
             {
                 AppId = GetCommandLineArg(args, "--appId=");
                 AppSecret = GetCommandLineArg(args, "--appSecret=");
+                Type = GetCommandLineArg(args, "--type=", true);
+                CloudDocFolder = GetCommandLineArg(args, "--folderToken=", true);
                 WikiSpaceId = GetCommandLineArg(args, "--spaceId=", true);
                 DocSaveType = GetCommandLineArg(args, "--saveType=", true);
                 ExportPath = GetCommandLineArg(args, "--exportPath=");
@@ -79,8 +85,18 @@ namespace feishu_doc_export
                 AppSecret = Console.ReadLine();
                 Console.WriteLine("请输入文档导出的文件类型（可选值：docx、md、pdf，为空或其他非可选值则默认为docx）：");
                 DocSaveType = Console.ReadLine();
-                Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
-                WikiSpaceId = Console.ReadLine();
+                Console.WriteLine("请选择云文档类型（可选值：wiki、cloudDoc）");
+                Type = Console.ReadLine();
+                if (Type == "cloudDoc")
+                {
+                    Console.WriteLine("请输入云文档文件夹Token（必填项！）");
+                    CloudDocFolder = Console.ReadLine();
+                }
+                else
+                {
+                    Console.WriteLine("请输入要导出的知识库Id（为空代表从所有知识库中选择）：");
+                    WikiSpaceId = Console.ReadLine();
+                }
                 Console.WriteLine("请输入文档导出的目录位置：");
                 ExportPath = Console.ReadLine();
 //#endif
@@ -116,11 +132,13 @@ namespace feishu_doc_export
                 {
                     Console.WriteLine($"没有找到参数：{parameterName}");
                     Console.WriteLine("请填写以下所有参数：");
-                    Console.WriteLine("  --appId           飞书自建应用的AppId.");
-                    Console.WriteLine("  --appSecret       飞书自建应用的AppSecret.");
-                    Console.WriteLine("  --spaceId         飞书导出的知识库Id.");
+                    Console.WriteLine("  --appId           飞书自建应用的AppId.【必填项】");
+                    Console.WriteLine("  --appSecret       飞书自建应用的AppSecret.【必填项】");
+                    Console.WriteLine("  --exportPath      文档导出的目录位置.【必填项】");
+                    Console.WriteLine("  --type            知识库（wiki）或个人空间云文档（cloudDoc）（可选值：cloudDoc、wiki，为空则默认为wiki）");
                     Console.WriteLine("  --saveType        文档导出的文件类型（可选值：docx、md、pdf，为空或其他非可选值则默认为docx）.");
-                    Console.WriteLine("  --exportPath      文档导出的目录位置.");
+                    Console.WriteLine("  --folderToken     当type为个人空间云文档时，该项必填");
+                    Console.WriteLine("  --spaceId         飞书导出的知识库Id.");
                     Environment.Exit(0);
                 }
 
