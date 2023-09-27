@@ -74,10 +74,10 @@
 
 ```
 请填写以下所有参数：
-  --appId           飞书自建应用的AppId.
-  --appSecret       飞书自建应用的AppSecret.
+  --appId           飞书自建应用的AppId.【必填项】
+  --appSecret       飞书自建应用的AppSecret.【必填项】
+  --exportPath      文档导出的目录位置.【必填项】
   --spaceId         飞书导出的知识库Id（可为空，或者不传此参数）.
-  --exportPath      文档导出的目录位置.
   --type            知识库（wiki）或个人空间云文档（cloudDoc）（可选值：cloudDoc、wiki，为空则默认为wiki）.
   --saveType        文档导出的文件类型（可选值：docx、md、pdf，为空或其他非可选值则默认为docx）.
   --folderToken     当type为个人空间云文档时，该项必填.
