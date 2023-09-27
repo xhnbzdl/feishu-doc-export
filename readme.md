@@ -136,7 +136,7 @@
 
 ## 个人空间文档导出
 
-操作步骤，请参考**更新日志**[feishu-doc-export-v 0.0.4 ](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.4)
+操作步骤请参考**更新日志**[feishu-doc-export-v 0.0.4 ](https://github.com/xhnbzdl/feishu-doc-export/releases/tag/0.0.4)
 
 ## 耗时测试
 
@@ -218,4 +218,4 @@
 
 - 为什么不支持列举文件夹列表？
 
-  因为飞书对于个人空间做了登录限制，未登录情况下个人空间相关的部分`API`无法直接调用。而要支持登录，飞书只提供了网页端的接入方案，因此该项目不支持。
+  因为飞书对于个人空间做了登录限制，未登录情况下个人空间相关的部分`API`无法直接调用。而要支持登录，飞书只提供了网页端和小程序的接入方案，因此该项目不支持。
