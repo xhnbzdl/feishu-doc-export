@@ -39,13 +39,20 @@ namespace feishu_doc_export.Helper
             Environment.Exit(0);
         }
 
-        public static void LogError(string message)
+        public static void LogErrorExit(string message)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"【ERROR】{message}（请按任意键退出！）");
             Console.ResetColor();
             Console.ReadKey();
             Environment.Exit(0);
+        }
+
+        public static void LogError(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"【ERROR】{message}");
+            Console.ResetColor();
         }
 
         public static void LogFatal(string message)

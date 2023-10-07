@@ -178,7 +178,7 @@ namespace feishu_doc_export.HttpApi
             }
             catch (HttpRequestException ex)
             {
-                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                LogHelper.LogErrorExit($"请求异常！！！异常信息： {ex.Message}，堆栈信息： {ex.StackTrace}");
                 throw;
             }
         }
@@ -223,7 +223,7 @@ namespace feishu_doc_export.HttpApi
             }
             catch (HttpRequestException ex)
             {
-                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                LogHelper.LogErrorExit($"请求异常！！！异常信息： {ex.Message}，堆栈信息： {ex.StackTrace}");
                 throw;
             }
         }
@@ -247,7 +247,7 @@ namespace feishu_doc_export.HttpApi
 
                 if (responseData.Contains("1069902"))
                 {
-                    string message = $"无阅读或导出权限，已忽略。飞书服务端响应数据为：{responseData}";
+                    string message = $"无阅读或导出权限，已忽略，请手动下载。飞书服务端响应数据为：{responseData}";
                     throw new CustomException(message, 1069902);
                 }
             }
@@ -304,7 +304,7 @@ namespace feishu_doc_export.HttpApi
             }
             catch (HttpRequestException ex)
             {
-                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                LogHelper.LogErrorExit($"请求异常！！！异常信息： {ex.Message}，堆栈信息： {ex.StackTrace}");
                 throw;
             }
         }
@@ -319,7 +319,7 @@ namespace feishu_doc_export.HttpApi
             }
             catch (HttpRequestException ex)
             {
-                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                LogHelper.LogErrorExit($"请求异常！！！异常信息：{ex.Message}，堆栈信息：{ex.StackTrace}");
                 throw;
             }
         }
@@ -336,7 +336,7 @@ namespace feishu_doc_export.HttpApi
             }
             catch (HttpRequestException ex)
             {
-                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                LogHelper.LogErrorExit($"请求异常！！！异常信息：{ex.Message}，堆栈信息：{ex.StackTrace}");
                 throw;
             }
         }
@@ -386,7 +386,7 @@ namespace feishu_doc_export.HttpApi
             }
             catch (HttpRequestException ex)
             {
-                LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                LogHelper.LogErrorExit($"请求异常！！！异常信息：{ex.Message}，堆栈信息：{ex.StackTrace}");
                 throw;
             }
         }

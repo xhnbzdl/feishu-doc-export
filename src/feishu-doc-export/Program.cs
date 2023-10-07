@@ -2,11 +2,13 @@
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Saving;
+using feishu_doc_export.Dtos;
 using feishu_doc_export.Helper;
 using feishu_doc_export.HttpApi;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using WebApiClientCore;
+using WebApiClientCore.Exceptions;
 
 namespace feishu_doc_export
 {
@@ -66,7 +68,7 @@ namespace feishu_doc_export
                     if (!isSupport)
                     {
                         noSupportExportFiles.Add(item.Name);
-                        LogHelper.LogWarn($"文档【{item.Name}】不支持导出，已忽略。如有需要请手动下载");
+                        LogHelper.LogWarn($"文档【{item.Name}】不支持导出，已忽略。如有需要请手动下载。");
                         continue;
                     }
 
@@ -84,7 +86,7 @@ namespace feishu_doc_export
                         catch (Exception ex)
                         {
                             noSupportExportFiles.Add(item.Name);
-                            LogHelper.LogWarn($"下载文档【{item.Name}】时出现未知异常，已忽略。请手动下载。异常信息：{ex.Message}");
+                            LogHelper.LogError($"下载文档【{item.Name}】时出现未知异常，已忽略。请手动下载。异常信息：{ex.Message}，堆栈信息：{ex.StackTrace}");
                         }
                     }
 
@@ -121,7 +123,8 @@ namespace feishu_doc_export
                     }
                     catch (HttpRequestException ex)
                     {
-                        LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                        noSupportExportFiles.Add(item.Name);
+                        LogHelper.LogError($"下载文档【{item.Name}】时出现请求异常，异常信息：{ex.Message}，堆栈信息：{ex.StackTrace}");
                     }
                     catch (CustomException ex)
                     {
@@ -131,7 +134,7 @@ namespace feishu_doc_export
                     catch (Exception ex)
                     {
                         noSupportExportFiles.Add(item.Name);
-                        LogHelper.LogWarn($"下载文档【{item.Name}】时出现未知异常，已忽略。请手动下载。异常信息：{ex.Message}");
+                        LogHelper.LogError($"下载文档【{item.Name}】时出现未知异常，已忽略，请手动下载。异常信息：{ex.Message}，堆栈信息：{ex.StackTrace}");
                     }
                 }
             }
@@ -185,7 +188,7 @@ namespace feishu_doc_export
                     if (!isSupport)
                     {
                         noSupportExportFiles.Add(item.Title);
-                        LogHelper.LogWarn($"文档【{item.Title}】不支持导出，已忽略。如有需要请手动下载");
+                        LogHelper.LogWarn($"文档【{item.Title}】不支持导出，已忽略。如有需要请手动下载。");
                         continue;
                     }
 
@@ -240,7 +243,8 @@ namespace feishu_doc_export
                     }
                     catch (HttpRequestException ex)
                     {
-                        LogHelper.LogError($"请求异常！！！请检查您的网络环境。异常信息：{ex.Message}");
+                        noSupportExportFiles.Add(item.Title);
+                        LogHelper.LogError($"下载文档【{item.Title}】时出现请求异常！！！异常信息：{ex.Message}，堆栈信息：{ex.StackTrace}");
                     }
                     catch (CustomException ex)
                     {
@@ -250,7 +254,7 @@ namespace feishu_doc_export
                     catch (Exception ex)
                     {
                         noSupportExportFiles.Add(item.Title);
-                        LogHelper.LogWarn($"下载文档【{item.Title}】时出现未知异常，已忽略。请手动下载。异常信息：{ex.Message}");
+                        LogHelper.LogError($"下载文档【{item.Title}】时出现未知异常，已忽略，请手动下载。异常信息：{ex.Message}，堆栈信息：{ex.StackTrace}");
                     }
                 }
             }
@@ -258,7 +262,7 @@ namespace feishu_doc_export
             
 
             Console.WriteLine("—————————————————————————————文档已全部导出—————————————————————————————");
-            Console.WriteLine(noSupportExportFiles.Any() ? "以下是所有不支持导出的文档" : "");
+            Console.WriteLine(noSupportExportFiles.Any() ? "以下是所有无法导出的文档（包含不支持导出、导出异常的文档）" : "");
 
             // 输出不支持导入的文档
             for (int i = 0; i < noSupportExportFiles.Count; i++)
@@ -291,7 +295,21 @@ namespace feishu_doc_export
                 return;
             }
 
-            var exportTaskResult = await feiShuApiCaller.QueryExportTaskResult(exportTaskDto.Ticket, objToken);
+            int maxRetryCount = 10; // 最大重试次数
+            var exportTaskResult = new ExportTaskResultDto();
+            for (int i = 0; i < maxRetryCount; i++)
+            {
+                try
+                {
+                    exportTaskResult = await feiShuApiCaller.QueryExportTaskResult(exportTaskDto.Ticket, objToken);
+                    break;
+                }
+                catch (HttpRequestException ex) when (i < maxRetryCount - 1)
+                {
+                    await Task.Delay(1000);
+                }
+            }
+            
             var taskInfo = exportTaskResult.Result;
 
             if (taskInfo.JobErrorMsg == "success")
