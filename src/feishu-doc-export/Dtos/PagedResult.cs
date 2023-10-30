@@ -16,6 +16,9 @@ namespace feishu_doc_export.Dtos
         [JsonPropertyName("page_token")]
         public string PageToken { get; set; }
 
+        [JsonPropertyName("next_page_token")]
+        public string NextPageToken { get; set; }
+
         [JsonPropertyName("has_more")]
         public bool HasMore { get; set; }
     }

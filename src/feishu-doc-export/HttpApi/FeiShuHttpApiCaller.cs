@@ -416,7 +416,7 @@ namespace feishu_doc_export.HttpApi
                         }
                     }
 
-                    pageToken = pagedResult.PageToken;
+                    pageToken = pagedResult.PageToken ?? pagedResult.NextPageToken;
                     hasMore = pagedResult.HasMore;
 
                 } while (hasMore && !string.IsNullOrWhiteSpace(pageToken));
