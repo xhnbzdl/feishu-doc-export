@@ -83,6 +83,11 @@ namespace feishu_doc_export
 
                             continue;
                         }
+                        catch (HttpRequestException ex)
+                        {
+                            noSupportExportFiles.Add(item.Name);
+                            LogHelper.LogError($"下载文档【{item.Name}】时出现请求异常！！！异常信息：{ex.Message}，堆栈信息：{ex.StackTrace}");
+                        }
                         catch (Exception ex)
                         {
                             noSupportExportFiles.Add(item.Name);
@@ -202,6 +207,11 @@ namespace feishu_doc_export
                             await DownLoadFile(item.ObjToken);
 
                             continue;
+                        }
+                        catch (HttpRequestException ex)
+                        {
+                            noSupportExportFiles.Add(item.Title);
+                            LogHelper.LogError($"下载文档【{item.Title}】时出现请求异常！！！异常信息：{ex.Message}，堆栈信息：{ex.StackTrace}");
                         }
                         catch (Exception ex)
                         {

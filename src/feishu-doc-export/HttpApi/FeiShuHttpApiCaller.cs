@@ -233,7 +233,7 @@ namespace feishu_doc_export.HttpApi
             }
             catch (HttpRequestException ex)
             {
-                LogHelper.LogErrorExit($"请求异常！！！异常信息： {ex.Message}，堆栈信息： {ex.StackTrace}");
+                LogHelper.LogError($"请求异常！！！\r\n 异常信息： {ex.Message}，\r\n 堆栈信息： {ex.StackTrace} \r\n");
                 throw;
             }
         }
