@@ -17,6 +17,8 @@ namespace feishu_doc_export
 
         public static string CloudDocFolder { get; set; } 
 
+        public static bool Quit { get; set; }
+
         public static string Type { get; set; } = "wiki";
 
         private static string _docSaveType = "docx";
@@ -76,6 +78,7 @@ namespace feishu_doc_export
                 WikiSpaceId = GetCommandLineArg(args, "--spaceId=", true);
                 DocSaveType = GetCommandLineArg(args, "--saveType=", true);
                 ExportPath = GetCommandLineArg(args, "--exportPath=");
+                Quit = args.Contains("--quit");
             }
             else
             {

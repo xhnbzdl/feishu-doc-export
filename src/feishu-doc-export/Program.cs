@@ -274,8 +274,14 @@ namespace feishu_doc_export
             TimeSpan elapsedTime = stopwatch.Elapsed;
             // 输出执行时间（以秒为单位）
             double seconds = elapsedTime.TotalSeconds;
-            Console.WriteLine($"程序执行结束，总耗时{seconds}（秒）。请按任意键退出！");
 
+            if (GlobalConfig.Quit)
+            {
+                Console.WriteLine($"程序执行结束，总耗时{seconds}（秒）。已自动退出程序！");
+                return;
+            }
+
+            Console.WriteLine($"程序执行结束，总耗时{seconds}（秒）。请按任意键退出！");
             Console.ReadKey();
         }
 
