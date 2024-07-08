@@ -57,6 +57,12 @@
   - 打开知识库，如果你是知识库管理员，则可以看见知识空间设置。打开知识空间设置>成员管理>添加管理员，选择刚刚建立的群组
 - 回到开发者平台，打开凭证与基础信息，获取 `App ID` 和 `App Secret`
 
+### 如何获取知识库ID
+![image](https://github.com/xhnbzdl/feishu-doc-export/assets/84184815/ba45e7c8-ff76-4591-bda1-366f6234a6d0)
+![image](https://github.com/xhnbzdl/feishu-doc-export/assets/84184815/8be655df-9168-4c2a-90d6-81dff8e1676a)
+
+
+
 ### 下载程序
 
 > 下载地址：[（Releases）feishu-doc-export](https://github.com/xhnbzdl/feishu-doc-export/releases)，请选择最新版本下载
